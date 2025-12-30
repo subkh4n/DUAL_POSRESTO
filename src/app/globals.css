@@ -1,26 +1,167 @@
 @import "tailwindcss";
+@import "konsta/react/theme.css";
+
+/* ============================== */
+/* Selia UI Theme Variables       */
+/* ============================== */
 
 :root {
+  /* Background & Foreground */
   --background: #ffffff;
-  --foreground: #171717;
-}
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-footer: #fafafa;
+  --card-border: #e4e4e7;
+  --card-separator: #f4f4f5;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Primary */
+  --primary: #007aff;
+  --primary-foreground: #ffffff;
+  --primary-border: #006ae6;
+
+  /* Secondary */
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --secondary-border: #e4e4e7;
+
+  /* Tertiary */
+  --tertiary: #27272a;
+  --tertiary-foreground: #ffffff;
+  --tertiary-border: #3f3f46;
+
+  /* Accent */
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+
+  /* Muted */
+  --muted: #71717a;
+  --muted-foreground: #a1a1aa;
+
+  /* Status Colors */
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  --info: #3b82f6;
+  --info-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #ffffff;
+  --danger: #ef4444;
+  --danger-foreground: #ffffff;
+  --danger-border: #dc2626;
+
+  /* Border */
+  --border: #e4e4e7;
+  --ring: #007aff;
+
+  /* Dashboard specific */
+  --sidebar-bg: #18181b;
+  --sidebar-text: #fafafa;
+
+  /* Border radius */
+  --radius: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #09090b;
+    --foreground: #fafafa;
+    --card: #18181b;
+    --card-footer: #27272a;
+    --card-border: #27272a;
+    --card-separator: #27272a;
+    --secondary: #27272a;
+    --secondary-foreground: #fafafa;
+    --secondary-border: #3f3f46;
+    --tertiary: #fafafa;
+    --tertiary-foreground: #09090b;
+    --accent: #27272a;
+    --accent-foreground: #fafafa;
+    --muted: #a1a1aa;
+    --muted-foreground: #71717a;
+    --border: #27272a;
   }
+}
+
+/* ============================== */
+/* Tailwind Theme Integration     */
+/* ============================== */
+
+@theme inline {
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-footer: var(--card-footer);
+  --color-card-border: var(--card-border);
+  --color-card-separator: var(--card-separator);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-border: var(--secondary-border);
+
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--tertiary-foreground);
+  --color-tertiary-border: var(--tertiary-border);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-border: var(--danger-border);
+
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  /* Fonts */
+  --font-sans: var(--font-inter), var(--font-roboto), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* ============================== */
+/* Base Styles                    */
+/* ============================== */
+
+* {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* ============================== */
+/* Konsta UI Overrides            */
+/* ============================== */
+
+.k-ios,
+.k-material {
+  --k-color-primary: var(--primary);
+  --k-color-primary-shade: var(--primary-border);
+}
+
+/* ============================== */
+/* Dashboard Utilities            */
+/* ============================== */
+
+.dashboard-sidebar {
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
 }

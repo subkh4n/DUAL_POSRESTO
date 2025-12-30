@@ -1,0 +1,10 @@
+{
+  "$schema": "https://selia.nauv.al/schema.json",
+  "framework": "next",
+  "typescript": true,
+  "tailwindcss": "v4",
+  "paths": {
+    "components": "src/components/selia",
+    "utils": "src/lib"
+  }
+}
