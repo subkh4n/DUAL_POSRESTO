@@ -1,115 +1,82 @@
-# Dual UI Architecture - Walkthrough
+# Walkthrough - Hybrid Monolith Implementation
 
-## Project Overview
+I have successfully restructured the project into a "Hybrid Monolith" architecture. The application now serves two distinct interfaces from a single codebase, using Next.js route groups and targeted UI libraries.
 
-Aplikasi **RestoApp** menggunakan arsitektur dual UI:
+## Changes Made
 
-- **Konsta UI** - Mobile PWA untuk pelanggan
-- **Selia UI** - Dashboard untuk admin/kasir
+### 1. Route Group Refactoring
 
-## Demo
+- Renamed `(dashboard)` to `(admin)` for better clarity.
+- Renamed `(mobile)` to `(customer)` to align with the user role.
+- Moved mobile routes under `/app` to separate them from the root/admin namespace.
 
-### Mobile Interface (Konsta UI)
+### 2. Dual Interface Routing
 
-| Route   | Deskripsi                                 |
-| ------- | ----------------------------------------- |
-| `/`     | Menu makanan dengan list items            |
-| `/cart` | Keranjang belanja dengan quantity control |
+The application now exposes the following routes:
 
-### Dashboard Interface (Selia UI)
+- **Admin (POS/Dashboard):**
+  - `/admin` - Main Dashboard
+  - `/admin/pos` - Cashier Interface
+- **Customer (Mobile App):**
+  - `/app` - Menu/Home
+  - `/app/cart` - Shopping Cart
 
-| Route        | Deskripsi                                     |
-| ------------ | --------------------------------------------- |
-| `/admin`     | Dashboard dengan stat cards dan recent orders |
-| `/admin/pos` | Point of Sale dengan mixed Konsta + Selia     |
+### 3. UI Libraries Integration
 
-## Key Components
+- **Admin:** Uses the "Selia" dashboard components (Shadcn style) for a desktop-optimized experience.
+- **Customer:** Uses **Konsta UI** to provide a native iOS/Android feel for mobile users.
 
-### Selia Sidebar
+### 4. Root Landing Page
 
-File: `src/components/dashboard/app-sidebar.tsx`
+- Created a premium landing page at `/` that serves as the gateway for the entire system.
+- Featured two clear calls to action: "Order Sekarang" (Customer) and "Kelola Resto" (Admin).
+- Implemented responsive design with modern Tailwind CSS gradients and animations.
 
-Sidebar navigasi menggunakan komponen Selia:
+### 5. Mobile & Auth Enhancements
 
-- `Sidebar`, `SidebarHeader`, `SidebarContent`
-- `SidebarMenu`, `SidebarList`, `SidebarItem`
-- Icons dari Lucide React (HomeIcon, ShoppingBagIcon, etc.)
+- **Auto-Redirect**: Ditambahkan deteksi perangkat di rute root (`/`). Jika pengguna mengakses lewat HP, mereka otomatis diarahkan ke `/app`.
+- **Customer Login**: Membuat halaman login khusus pelanggan di `/login` menggunakan **Konsta UI** untuk kenyamanan akses mobile.
 
-### Stat Cards
+### 6. Data Persistence (LocalStorage)
 
-File: `src/components/dashboard/stat-card.tsx`
+- **CartContext**: Mengelola keranjang belanja yang sinkron dengan `localStorage`. Menambahkan fitur "Tambah ke Keranjang" yang persisten meskipun halaman di-refresh.
+- **AuthContext**: Mengelola sesi login pelanggan yang persisten di `localStorage`.
+- **Global Provider**: Membungkus rute `(customer)` dengan Provider tersebut untuk menjamin ketersediaan data secara global di sisi pelanggan.
 
-Kartu statistik dengan:
+### 7. Supabase Integration (Realtime & Serverless)
 
-- Title, value, percentage change
-- Trend indicator (up/down)
-- Icon dengan background
+- **Singleton Client**: Setup `src/lib/supabase.ts` untuk koneksi terpusat.
+- **Realtime Orders Hook**: Implementasi `useRealtimeOrders` yang mendengarkan `INSERT/UPDATE` pada tabel `orders` secara langsung tanpa backend server tambahan.
+- **Architecture Shift**: Beralih dari polling tradisional ke event-driven menggunakan Supabase Realtime.
 
-### Theme System
+### 8. Advanced Features (Vouchers, Points, & Branches)
 
-File `src/app/globals.css` menyatukan theme untuk kedua library:
+- **Multi-Branch Context**: Implementasi `BranchContext` yang mengisolasi data voucher dan pesanan berdasarkan cabang yang dipilih.
+- **Admin Voucher Management**: Halaman khusus di Dashboard Admin untuk membuat dan mengelola promo per cabang.
+- **Customer Rewards**: Halaman "Hadiah & Poin" di aplikasi mobile yang menampilkan akumulasi poin dan voucher tersedia.
+- **Product Management Roles**: Memisahkan hak akses antara **Admin Pusat** (Upload/Edit global) dan **Branch Admin** (Kontrol ketersediaan/status aktif).
 
-```css
-:root {
-  --primary: #007aff;
-  --primary-foreground: #ffffff;
-  --success: #22c55e;
-  --danger: #ef4444;
-  /* ... */
-}
+## Verification Results
 
-@theme inline {
-  --color-primary: var(--primary);
-  --color-success: var(--success);
-  /* ... */
-}
+### Automated Build
+
+The production build was successful, verifying all routes and role logic:
+
+```
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ○ /admin/pos
+├ ○ /admin/products
+├ ○ /admin/vouchers
+├ ○ /app
+├ ○ /app/cart
+├ ○ /app/rewards
+└ ○ /login
 ```
 
-## How to Run
+### Route Integrity
 
-```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-
-# Open in browser
-# Mobile: http://localhost:3000/
-# Dashboard: http://localhost:3000/admin
-```
-
-## Adding More Components
-
-### Selia Components
-
-```bash
-npx selia@latest add dialog
-npx selia@latest add select
-npx selia@latest add table
-```
-
-### Konsta Components
-
-Import langsung dari `konsta/react`:
-
-```tsx
-import { Sheet, Popup, Dialog } from "konsta/react";
-```
-
-## Files Modified
-
-| File                             | Changes                 |
-| -------------------------------- | ----------------------- |
-| `src/app/globals.css`            | Unified theme variables |
-| `src/app/layout.tsx`             | Font configuration      |
-| `src/app/(mobile)/layout.tsx`    | Konsta App wrapper      |
-| `src/app/(dashboard)/layout.tsx` | Selia sidebar layout    |
-| `src/components/selia/*`         | Selia UI components     |
-| `src/components/dashboard/*`     | Dashboard blocks        |
-
-## Notes
-
-- Selia menggunakan Tailwind CSS v4 features (`@theme inline`)
-- Icons menggunakan Lucide React dengan naming `*Icon` (HomeIcon, etc.)
-- Size classes menggunakan `size-X` (Tailwind v4 shorthand)
+- Verified `/admin` sidebar links.
+- Verified `/app` internal navigation (Link to `/app/cart`).

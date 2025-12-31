@@ -27,17 +27,21 @@ import {
   LogOutIcon,
   ChefHatIcon,
   BarChart3Icon,
+  TicketIcon,
+  MailIcon,
 } from "lucide-react";
 
 const menuItems = [
   { href: "/admin", label: "Dashboard", icon: HomeIcon },
   { href: "/admin/pos", label: "Kasir (POS)", icon: ShoppingBagIcon },
+  { href: "/admin/vouchers", label: "Voucher & Promo", icon: TicketIcon },
   { href: "/admin/products", label: "Produk", icon: Package2Icon },
   { href: "/admin/customers", label: "Pelanggan", icon: UsersIcon },
   { href: "/admin/reports", label: "Laporan", icon: BarChart3Icon },
 ];
 
 const settingsItems = [
+  { href: "/admin/email-logs", label: "Monitoring Email", icon: MailIcon },
   { href: "/admin/settings", label: "Pengaturan", icon: SettingsIcon },
 ];
 
@@ -74,7 +78,9 @@ export function AppSidebar() {
                       <item.icon className="size-4" />
                       <span className="flex-1">{item.label}</span>
                       {item.href === "/admin/pos" && (
-                        <Badge variant="primary" size="sm">3</Badge>
+                        <Badge variant="primary" size="sm">
+                          3
+                        </Badge>
                       )}
                     </SidebarItemButton>
                   </SidebarItem>

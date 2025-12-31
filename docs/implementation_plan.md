@@ -1,6 +1,6 @@
-# POS_RESTO Backend Data Relations untuk Supabase
+# POS_RESTO Backend Data Relations (Hybrid Monolith)
 
-Dokumentasi lengkap tentang struktur data dan hubungan antar tabel dari aplikasi POS_RESTO untuk migrasi ke Supabase.
+Dokumentasi lengkap tentang struktur data dan hubungan antar tabel untuk aplikasi POS_RESTO yang mendukung Multi-Cabang, Manajemen Produk berbasis Role, dan Loyalty System.
 
 ---
 
@@ -8,268 +8,108 @@ Dokumentasi lengkap tentang struktur data dan hubungan antar tabel dari aplikasi
 
 ```mermaid
 erDiagram
-    USERS {
+    BRANCHES ||--o{ USERS : "belongs to"
+    BRANCHES ||--o{ BRANCH_PRODUCTS : "manages"
+    BRANCHES ||--o{ VOUCHERS : "issued by"
+    BRANCHES ||--o{ TRANSACTIONS : "hosted at"
+    BRANCHES ||--o{ STOCK_LOG : "records"
+
+    USERS ||--o{ TRANSACTIONS : "processes/buys"
+    USERS ||--o{ CUSTOMER_POINTS : "earns"
+
+    CATEGORIES ||--o{ PRODUCTS : "contains"
+    PRODUCTS ||--o{ BRANCH_PRODUCTS : "distributed to"
+    PRODUCTS ||--o{ TRANSACTION_DETAILS : "sold as"
+
+    TRANSACTIONS ||--o{ TRANSACTION_DETAILS : "includes"
+    VOUCHERS ||--o{ TRANSACTIONS : "applied to"
+
+    BRANCHES {
         uuid id PK
-        text username UK
-        text password
         text name
-        text role
-        text email
-        text phone
-        text avatar
-        timestamp created_at
-        timestamp last_login
-        boolean is_active
+        text address
+        decimal latitude
+        decimal longitude
     }
 
-    CATEGORIES {
+    USERS {
         uuid id PK
-        text name UK
-        text icon
+        text role "ADMIN_PUSAT, BRANCH_ADMIN, KASIR, CUSTOMER"
+        uuid branch_id FK
+        text phone UK
+        text name
     }
 
     PRODUCTS {
         uuid id PK
         text name
         uuid category_id FK
-        decimal price
-        integer stock
-        text stock_type
-        boolean available
-        text image
-        text price_type
+        decimal base_price
     }
 
-    MODIFIER_GROUPS {
-        uuid id PK
-        text name
-        text type
-        boolean required
-        integer min_select
-        integer max_select
-    }
-
-    MODIFIER_ITEMS {
-        uuid id PK
-        uuid group_id FK
-        text name
-        decimal price_adjust
-        boolean available
-    }
-
-    PRODUCT_MODIFIER_GROUPS {
+    BRANCH_PRODUCTS {
+        uuid branch_id FK
         uuid product_id FK
-        uuid modifier_group_id FK
+        boolean is_active
+        integer stock
+    }
+
+    VOUCHERS {
+        uuid id PK
+        uuid branch_id FK
+        text code
+        decimal value
+        text discount_type
     }
 
     TRANSACTIONS {
         uuid id PK
-        timestamp created_at
-        decimal subtotal
-        decimal tax
+        uuid branch_id FK
+        uuid customer_id FK
         decimal total
-        decimal cash_received
-        decimal change
-        text order_type
-        text table_number
-        uuid cashier_id FK
-        text payment_method
+        uuid voucher_id FK
     }
-
-    TRANSACTION_DETAILS {
-        uuid id PK
-        uuid transaction_id FK
-        uuid product_id FK
-        text product_name
-        integer qty
-        decimal price
-        text note
-        decimal total_price
-        text allocation
-        jsonb selected_modifiers
-        decimal modifier_total
-    }
-
-    STOCK_LOG {
-        uuid id PK
-        timestamp created_at
-        uuid product_id FK
-        text product_name
-        text action_type
-        integer stock_value
-        text notes
-    }
-
-    CATEGORIES ||--o{ PRODUCTS : "has many"
-    USERS ||--o{ TRANSACTIONS : "processes"
-    TRANSACTIONS ||--o{ TRANSACTION_DETAILS : "contains"
-    PRODUCTS ||--o{ TRANSACTION_DETAILS : "sold in"
-    MODIFIER_GROUPS ||--o{ MODIFIER_ITEMS : "has many"
-    PRODUCTS ||--o{ PRODUCT_MODIFIER_GROUPS : "has"
-    MODIFIER_GROUPS ||--o{ PRODUCT_MODIFIER_GROUPS : "assigned to"
-    PRODUCTS ||--o{ STOCK_LOG : "tracked by"
 ```
 
 ---
 
-## Penjelasan Relasi Data
+## Penjelasan Relasi Data Baru
 
-### 1. Users → Transactions
+### 1. Multi-Branch Isolation
 
-- **Relasi:** One-to-Many
-- **Penjelasan:** Seorang kasir (`users`) dapat memproses banyak transaksi (`transactions`)
-- **Foreign Key:** `transactions.cashier_id` → `users.id`
+Data transaksi (`transactions`), stok (`stock_log`), dan voucher (`vouchers`) sekarang terikat pada `branch_id`. Ini memungkinkan setiap cabang memiliki laporan dan promo yang terpisah.
 
-### 2. Categories → Products
+### 2. Role-Based Product Management
 
-- **Relasi:** One-to-Many
-- **Penjelasan:** Satu kategori memiliki banyak produk
-- **Foreign Key:** `products.category_id` → `categories.id`
+- **PRODUCTS (Global)**: Merupakan katalog induk yang hanya bisa dibuat/diedit oleh **Admin Pusat**.
+- **BRANCH_PRODUCTS (Local)**: Merupakan tabel operasional cabang. **Branch Admin** hanya mengelola ketersediaan (`is_active`) dan jumlah stok di cabangnya masing-masing.
 
-### 3. Products ↔ ModifierGroups (Many-to-Many)
+### 3. Customer Loyalty
 
-- **Relasi:** Many-to-Many melalui junction table
-- **Penjelasan:** Produk bisa memiliki beberapa modifier groups (misal: ukuran, level pedas)
-- **Junction Table:** `product_modifier_groups`
-
-### 4. ModifierGroups → ModifierItems
-
-- **Relasi:** One-to-Many
-- **Penjelasan:** Satu modifier group memiliki banyak modifier items
-- **Foreign Key:** `modifier_items.group_id` → `modifier_groups.id`
-
-### 5. Transactions → TransactionDetails
-
-- **Relasi:** One-to-Many
-- **Penjelasan:** Satu transaksi memiliki banyak item detail
-- **Foreign Key:** `transaction_details.transaction_id` → `transactions.id`
-
-### 6. Products → TransactionDetails
-
-- **Relasi:** One-to-Many
-- **Penjelasan:** Produk bisa muncul di banyak detail transaksi
-- **Foreign Key:** `transaction_details.product_id` → `products.id`
-
-### 7. Products → StockLog
-
-- **Relasi:** One-to-Many
-- **Penjelasan:** Setiap produk memiliki log perubahan stok
-- **Foreign Key:** `stock_log.product_id` → `products.id`
+- Setiap transaksi oleh `customer_id` akan memicu trigger di database untuk menambahkan poin ke `customer_points` secara otomatis.
+- Voucher bersifat spesifik per cabang (`vouchers.branch_id`) untuk mendukung promosi lokal.
 
 ---
 
-## Struktur Tabel Detail
+## Struktur Tabel (Update)
 
-### users
+### branch_products
 
-| Column     | Type        | Constraints      | Description     |
-| ---------- | ----------- | ---------------- | --------------- |
-| id         | uuid        | PRIMARY KEY      | User ID         |
-| username   | text        | UNIQUE, NOT NULL | Username login  |
-| password   | text        | NOT NULL         | Password (hash) |
-| name       | text        | NOT NULL         | Nama lengkap    |
-| role       | text        | NOT NULL         | ADMIN, KASIR    |
-| email      | text        |                  | Email           |
-| phone      | text        |                  | Nomor telepon   |
-| avatar     | text        |                  | URL avatar      |
-| created_at | timestamptz | DEFAULT now()    | Waktu dibuat    |
-| last_login | timestamptz |                  | Login terakhir  |
-| is_active  | boolean     | DEFAULT true     | Status aktif    |
+| Column     | Type    | Constraints        | Description                      |
+| ---------- | ------- | ------------------ | -------------------------------- |
+| branch_id  | uuid    | FK -> branches(id) | ID Cabang                        |
+| product_id | uuid    | FK -> products(id) | ID Produk dari katalog pusat     |
+| is_active  | boolean | DEFAULT true       | Status ketersediaan di cabang    |
+| stock      | integer | DEFAULT 0          | Stok spesifik di cabang tersebut |
 
-### categories
+### users (Update)
 
-| Column | Type | Constraints      | Description   |
-| ------ | ---- | ---------------- | ------------- |
-| id     | uuid | PRIMARY KEY      | Category ID   |
-| name   | text | UNIQUE, NOT NULL | Nama kategori |
-| icon   | text |                  | Emoji icon    |
+| Column    | Type | Constraints                      | Description                  |
+| --------- | ---- | -------------------------------- | ---------------------------- |
+| role      | text | ADMIN_PUSAT, BRANCH_ADMIN, KASIR | Hak akses user               |
+| branch_id | uuid | FK -> branches(id)               | Cabang tempat staff bertugas |
 
-### products
-
-| Column      | Type          | Constraints               | Description                |
-| ----------- | ------------- | ------------------------- | -------------------------- |
-| id          | uuid          | PRIMARY KEY               | Product ID                 |
-| name        | text          | NOT NULL                  | Nama produk                |
-| category_id | uuid          | REFERENCES categories(id) | FK ke categories           |
-| price       | decimal(12,2) | NOT NULL                  | Harga                      |
-| stock       | integer       | DEFAULT 0                 | Jumlah stok                |
-| stock_type  | text          | NOT NULL                  | STOK_FISIK, NON_STOK, JASA |
-| available   | boolean       | DEFAULT true              | Tersedia/tidak             |
-| image       | text          |                           | URL gambar                 |
-| price_type  | text          | DEFAULT 'FIXED'           | FIXED, FLEXIBLE            |
-
-### modifier_groups
-
-| Column     | Type    | Constraints        | Description                |
-| ---------- | ------- | ------------------ | -------------------------- |
-| id         | uuid    | PRIMARY KEY        | Group ID                   |
-| name       | text    | NOT NULL           | Nama group (misal: Ukuran) |
-| type       | text    | DEFAULT 'MULTIPLE' | SINGLE, MULTIPLE           |
-| required   | boolean | DEFAULT false      | Wajib pilih?               |
-| min_select | integer | DEFAULT 0          | Minimum pilihan            |
-| max_select | integer | DEFAULT 10         | Maximum pilihan            |
-
-### modifier_items
-
-| Column       | Type          | Constraints                    | Description              |
-| ------------ | ------------- | ------------------------------ | ------------------------ |
-| id           | uuid          | PRIMARY KEY                    | Item ID                  |
-| group_id     | uuid          | REFERENCES modifier_groups(id) | FK ke groups             |
-| name         | text          | NOT NULL                       | Nama item (misal: Large) |
-| price_adjust | decimal(12,2) | DEFAULT 0                      | Tambahan harga           |
-| available    | boolean       | DEFAULT true                   | Tersedia/tidak           |
-
-### product_modifier_groups (Junction Table)
-
-| Column            | Type | Constraints                                      | Description    |
-| ----------------- | ---- | ------------------------------------------------ | -------------- |
-| product_id        | uuid | REFERENCES products(id) ON DELETE CASCADE        | FK ke products |
-| modifier_group_id | uuid | REFERENCES modifier_groups(id) ON DELETE CASCADE | FK ke groups   |
-| PRIMARY KEY       |      | (product_id, modifier_group_id)                  | Composite key  |
-
-### transactions
-
-| Column         | Type          | Constraints          | Description          |
-| -------------- | ------------- | -------------------- | -------------------- |
-| id             | uuid          | PRIMARY KEY          | Transaction ID       |
-| created_at     | timestamptz   | DEFAULT now()        | Waktu transaksi      |
-| subtotal       | decimal(12,2) | NOT NULL             | Subtotal             |
-| tax            | decimal(12,2) | DEFAULT 0            | Pajak                |
-| total          | decimal(12,2) | NOT NULL             | Total                |
-| cash_received  | decimal(12,2) |                      | Uang diterima        |
-| change         | decimal(12,2) |                      | Kembalian            |
-| order_type     | text          |                      | Dine-in, Takeaway    |
-| table_number   | text          |                      | Nomor meja           |
-| cashier_id     | uuid          | REFERENCES users(id) | FK ke users          |
-| payment_method | text          |                      | Tunai, QRIS, Piutang |
-
-### transaction_details
-
-| Column             | Type          | Constraints                                   | Description             |
-| ------------------ | ------------- | --------------------------------------------- | ----------------------- |
-| id                 | uuid          | PRIMARY KEY                                   | Detail ID               |
-| transaction_id     | uuid          | REFERENCES transactions(id) ON DELETE CASCADE | FK ke transactions      |
-| product_id         | uuid          | REFERENCES products(id)                       | FK ke products          |
-| product_name       | text          | NOT NULL                                      | Nama produk (snapshot)  |
-| qty                | integer       | NOT NULL                                      | Quantity                |
-| price              | decimal(12,2) | NOT NULL                                      | Harga satuan            |
-| note               | text          |                                               | Catatan item            |
-| total_price        | decimal(12,2) | GENERATED                                     | qty \* price            |
-| allocation         | text          | DEFAULT 'Umum'                                | Alokasi dana            |
-| selected_modifiers | jsonb         |                                               | Array modifier terpilih |
-| modifier_total     | decimal(12,2) | DEFAULT 0                                     | Total modifier price    |
-
-### stock_log
-
-| Column       | Type        | Constraints             | Description                                               |
-| ------------ | ----------- | ----------------------- | --------------------------------------------------------- |
-| id           | uuid        | PRIMARY KEY             | Log ID                                                    |
-| created_at   | timestamptz | DEFAULT now()           | Waktu log                                                 |
-| product_id   | uuid        | REFERENCES products(id) | FK ke products                                            |
-| product_name | text        | NOT NULL                | Nama produk                                               |
-| action_type  | text        | NOT NULL                | STOCK_IN, STOCK_OUT, SALE_OUT, ADJUSTMENT, UPLOAD_PRODUCT |
-| stock_value  | integer     | NOT NULL                | Nilai perubahan (+/-)                                     |
-| notes        | text        |                         | Catatan                                                   |
+---
 
 ---
 

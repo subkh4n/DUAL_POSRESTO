@@ -1,0 +1,46 @@
+# Task Checklist
+
+- [x] Structure Refactoring
+  - [x] Rename `(dashboard)` to `(admin)`
+  - [x] Rename `(mobile)` to `(customer)`
+  - [x] Align internal routes with user request (/admin and /app)
+- [x] UI Implementation
+  - [x] Configure `(admin)/layout.tsx` for Desktop Dashboard (Selia/Shadcn style)
+  - [x] Configure `(customer)/layout.tsx` for Mobile App (Konsta UI)
+- [x] Landing Page Implementation
+  - [x] Create `src/app/page.tsx` with a premium design
+  - [x] Add navigation buttons to `/app` and `/admin`
+- [x] Mobile Enhancements
+  - [x] Implement auto-redirect to `/app` for mobile users in `src/app/page.tsx`
+  - [x] Create Customer Login Page at `src/app/(customer)/login/page.tsx`
+- [x] Data Persistence (LocalStorage & Supabase)
+  - [x] Create `src/context/CartContext.tsx` with LocalStorage sync
+  - [x] Create `src/context/AuthContext.tsx` for mobile session & Supabase Auth
+  - [x] Update `/app` components to use real context data
+- [x] Supabase Integration & Connection
+  - [x] Install `@supabase/supabase-js`
+  - [x] Create `src/lib/supabase.ts` (Client setup)
+  - [x] Create `src/hooks/useRealtimeOrders.ts` (Realtime Logic)
+  - [x] Configure Environment Variables in `.env.local`
+  - [x] Verify SQL Migration (Branches, Products, Transactions)
+  - [x] Verify RLS Policies for Customer Checkout
+- [x] Brevo Email Integration
+  - [x] Create API Route `src/app/api/send-email/route.ts`
+  - [x] Create Email Utility `src/lib/email.ts`
+  - [x] Implement Order Success detail email
+  - [x] Implement Password Reset email flow
+- [x] Advanced Features (Vouchers, Points, Branches)
+  - [x] Update Supabase Schema: `branches`, `vouchers`, `points`
+  - [x] Implement Branch Context (Isolation by `branch_id`)
+  - [x] Create UI for Voucher Management (Admin)
+  - [x] Create UI for Points & Vouchers (Customer Mobile)
+  - [x] Implement Role-Based Product Management (Pusat vs Branch)
+- [x] Verification & Polish
+  - [x] Fix and Standardize Tailwind CSS v4 syntax
+  - [x] Clean up unused code and types
+  - [x] Test end-to-end checkout & email flow
+- [x] Email Monitoring Dashboard
+  - [x] Create implementation plan
+  - [x] Add `email_logs` table to Supabase schema
+  - [x] Implement logging in `api/send-email`
+  - [x] Create Admin Log Page `/admin/email-logs`

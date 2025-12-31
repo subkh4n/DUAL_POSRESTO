@@ -1,7 +1,16 @@
 "use client";
 
-import { Page, Navbar, List, ListItem, Block, BlockTitle, Button } from "konsta/react";
+import {
+  Page,
+  Navbar,
+  List,
+  ListItem,
+  Block,
+  BlockTitle,
+  Button,
+} from "konsta/react";
 import { Badge } from "@/components/selia/badge";
+import { useCart } from "@/context/CartContext";
 import Link from "next/link";
 
 // Sample menu data
@@ -14,17 +23,18 @@ const menuItems = [
 ];
 
 export default function MobileHomePage() {
+  const { addToCart, totalItems } = useCart();
+
   return (
     <Page>
-      <Navbar
-        title="🍽️ RestoApp"
-        subtitle="Pesan makanan favoritmu"
-      />
+      <Navbar title="🍽️ RestoApp" subtitle="Pesan makanan favoritmu" />
 
       <Block className="!mt-4">
         <div className="bg-gradient-to-r from-primary to-blue-600 rounded-2xl p-6 text-white">
           <h2 className="text-xl font-bold">Selamat Datang!</h2>
-          <p className="text-sm opacity-90 mt-1">Nikmati diskon 20% untuk pesanan pertama</p>
+          <p className="text-sm opacity-90 mt-1">
+            Nikmati diskon 20% untuk pesanan pertama
+          </p>
           <Button className="mt-4 !bg-white !text-primary">
             Klaim Sekarang
           </Button>
@@ -39,11 +49,16 @@ export default function MobileHomePage() {
             key={item.id}
             link
             chevronMaterial
+            onClick={() => addToCart(item)}
             title={item.name}
             after={
               <div className="flex items-center gap-2">
                 {item.badge && (
-                  <Badge variant={item.badge === "Best Seller" ? "warning" : "success"}>
+                  <Badge
+                    variant={
+                      item.badge === "Best Seller" ? "warning" : "success"
+                    }
+                  >
                     {item.badge}
                   </Badge>
                 )}
@@ -57,9 +72,9 @@ export default function MobileHomePage() {
       </List>
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border safe-area-bottom">
-        <Link href="/cart">
+        <Link href="/app/cart">
           <Button large className="w-full !bg-primary">
-            🛒 Lihat Keranjang (3 item)
+            🛒 Lihat Keranjang ({totalItems} item)
           </Button>
         </Link>
       </div>
