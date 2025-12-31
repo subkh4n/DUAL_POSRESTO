@@ -1,74 +1,275 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { App, List, ListItem } from "konsta/react";
 import { Card, CardHeader, CardBody, CardTitle } from "@/components/selia/card";
 import { Button } from "@/components/selia/button";
 import { Badge } from "@/components/selia/badge";
-import { PlusIcon, MinusIcon, SearchIcon, CheckIcon, XIcon } from "lucide-react";
+import {
+  PlusIcon,
+  MinusIcon,
+  SearchIcon,
+  CheckIcon,
+  XIcon,
+} from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-interface MenuItem {
-  id: number;
+// Types
+interface Product {
+  id: string;
   name: string;
-  price: number;
-  category: string;
+  base_price: number;
+  category_id: string;
+  category_name?: string;
 }
 
-interface OrderItem {
-  id: number;
+interface ModifierGroup {
+  id: string;
   name: string;
-  price: number;
+  type: "SINGLE" | "MULTIPLE";
+  required: boolean;
+  min_select: number;
+  max_select: number;
+  items: ModifierItem[];
+}
+
+interface ModifierItem {
+  id: string;
+  group_id: string;
+  name: string;
+  price_adjust: number;
+  available: boolean;
+}
+
+interface SelectedModifier {
+  groupId: string;
+  groupName: string;
+  itemId: string;
+  itemName: string;
+  priceAdjust: number;
+}
+
+interface CartItem {
+  id: string;
+  productId: string;
+  name: string;
+  basePrice: number;
   quantity: number;
-  tableNo: string;
+  modifiers: SelectedModifier[];
+  totalPrice: number;
 }
-
-const menuItems: MenuItem[] = [
-  { id: 1, name: "Nasi Goreng Spesial", price: 25000, category: "Makanan" },
-  { id: 2, name: "Mie Ayam Bakso", price: 20000, category: "Makanan" },
-  { id: 3, name: "Ayam Bakar Madu", price: 35000, category: "Makanan" },
-  { id: 4, name: "Es Teh Manis", price: 5000, category: "Minuman" },
-  { id: 5, name: "Jus Alpukat", price: 15000, category: "Minuman" },
-  { id: 6, name: "Kopi Susu", price: 12000, category: "Minuman" },
-];
 
 export default function POSPage() {
-  const [orders, setOrders] = useState<OrderItem[]>([
-    { id: 1, name: "Nasi Goreng Spesial", price: 25000, quantity: 2, tableNo: "Meja 5" },
-    { id: 2, name: "Es Teh Manis", price: 5000, quantity: 3, tableNo: "Meja 5" },
-  ]);
+  // Data State
+  const [products, setProducts] = useState<Product[]>([]);
+  const [modifierGroups, setModifierGroups] = useState<ModifierGroup[]>([]);
+  const [productModifiers, setProductModifiers] = useState<
+    { product_id: string; group_id: string }[]
+  >([]);
+  const [loading, setLoading] = useState(true);
 
-  const [cart, setCart] = useState<OrderItem[]>([]);
+  // UI State
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedModifiers, setSelectedModifiers] = useState<
+    SelectedModifier[]
+  >([]);
 
-  const addToCart = (item: MenuItem) => {
-    const existing = cart.find(c => c.id === item.id);
-    if (existing) {
-      setCart(cart.map(c =>
-        c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c
-      ));
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+
+      // Fetch products with category
+      const { data: productsData } = await supabase
+        .from("products")
+        .select("*, categories(name)");
+
+      // Fetch modifier groups
+      const { data: groupsData } = await supabase
+        .from("modifier_groups")
+        .select("*");
+
+      // Fetch modifier items
+      const { data: itemsData } = await supabase
+        .from("modifier_items")
+        .select("*")
+        .eq("available", true);
+
+      // Fetch product-modifier relations
+      const { data: relationsData } = await supabase
+        .from("product_modifiers")
+        .select("product_id, group_id");
+
+      // Map products
+      if (productsData) {
+        setProducts(
+          productsData.map((p: any) => ({
+            ...p,
+            category_name: p.categories?.name || "Lainnya",
+          }))
+        );
+      }
+
+      // Map groups with items
+      if (groupsData && itemsData) {
+        const groups = groupsData.map((g: any) => ({
+          ...g,
+          items: itemsData.filter((i: any) => i.group_id === g.id),
+        }));
+        setModifierGroups(groups);
+      }
+
+      if (relationsData) {
+        setProductModifiers(relationsData);
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
+  // Get modifier groups for a product
+  const getProductModifierGroups = (productId: string): ModifierGroup[] => {
+    const groupIds = productModifiers
+      .filter((pm) => pm.product_id === productId)
+      .map((pm) => pm.group_id);
+    return modifierGroups.filter((g) => groupIds.includes(g.id));
+  };
+
+  // Handle product click
+  const handleProductClick = (product: Product) => {
+    const groups = getProductModifierGroups(product.id);
+    if (groups.length > 0) {
+      setSelectedProduct(product);
+      setSelectedModifiers([]);
+      setShowModal(true);
     } else {
-      setCart([...cart, { ...item, quantity: 1, tableNo: "Meja 1" }]);
+      // No modifiers, add directly
+      addToCart(product, []);
     }
   };
 
-  const updateQuantity = (id: number, delta: number) => {
-    setCart(cart.map(c => {
-      if (c.id === id) {
-        const newQty = c.quantity + delta;
-        return newQty > 0 ? { ...c, quantity: newQty } : c;
+  // Toggle modifier selection
+  const toggleModifier = (group: ModifierGroup, item: ModifierItem) => {
+    setSelectedModifiers((prev) => {
+      const existing = prev.find((m) => m.itemId === item.id);
+
+      if (group.type === "SINGLE") {
+        // Remove other items from same group, add this one
+        const filtered = prev.filter((m) => m.groupId !== group.id);
+        if (existing) return filtered; // Deselect if already selected
+        return [
+          ...filtered,
+          {
+            groupId: group.id,
+            groupName: group.name,
+            itemId: item.id,
+            itemName: item.name,
+            priceAdjust: item.price_adjust,
+          },
+        ];
+      } else {
+        // MULTIPLE: toggle
+        if (existing) {
+          return prev.filter((m) => m.itemId !== item.id);
+        }
+        // Check max
+        const currentCount = prev.filter((m) => m.groupId === group.id).length;
+        if (currentCount >= group.max_select) return prev;
+        return [
+          ...prev,
+          {
+            groupId: group.id,
+            groupName: group.name,
+            itemId: item.id,
+            itemName: item.name,
+            priceAdjust: item.price_adjust,
+          },
+        ];
       }
-      return c;
-    }).filter(c => c.quantity > 0));
+    });
   };
 
-  const completeOrder = (id: number) => {
-    setOrders(orders.filter(o => o.id !== id));
+  // Add to cart
+  const addToCart = (product: Product, modifiers: SelectedModifier[]) => {
+    const modifierTotal = modifiers.reduce((sum, m) => sum + m.priceAdjust, 0);
+    const totalPrice = product.base_price + modifierTotal;
+
+    // Create unique ID based on product + modifiers combination
+    const modifierKey = modifiers
+      .map((m) => m.itemId)
+      .sort()
+      .join("-");
+    const cartId = `${product.id}-${modifierKey}`;
+
+    setCart((prev) => {
+      const existing = prev.find((c) => c.id === cartId);
+      if (existing) {
+        return prev.map((c) =>
+          c.id === cartId ? { ...c, quantity: c.quantity + 1 } : c
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: cartId,
+          productId: product.id,
+          name: product.name,
+          basePrice: product.base_price,
+          quantity: 1,
+          modifiers,
+          totalPrice,
+        },
+      ];
+    });
+
+    setShowModal(false);
+    setSelectedProduct(null);
   };
 
-  const cancelOrder = (id: number) => {
-    setOrders(orders.filter(o => o.id !== id));
+  // Confirm modifier selection
+  const confirmModifiers = () => {
+    if (!selectedProduct) return;
+
+    // Validate required groups
+    const groups = getProductModifierGroups(selectedProduct.id);
+    for (const group of groups) {
+      if (group.required) {
+        const selected = selectedModifiers.filter(
+          (m) => m.groupId === group.id
+        ).length;
+        if (selected < group.min_select) {
+          alert(`Silakan pilih ${group.name}`);
+          return;
+        }
+      }
+    }
+
+    addToCart(selectedProduct, selectedModifiers);
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // Update cart quantity
+  const updateQuantity = (id: string, delta: number) => {
+    setCart((prev) =>
+      prev
+        .map((c) =>
+          c.id === id ? { ...c, quantity: Math.max(0, c.quantity + delta) } : c
+        )
+        .filter((c) => c.quantity > 0)
+    );
+  };
+
+  const cartTotal = cart.reduce(
+    (sum, item) => sum + item.totalPrice * item.quantity,
+    0
+  );
+
+  if (loading) {
+    return <div className="p-8 text-center text-muted">Memuat data...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -76,15 +277,13 @@ export default function POSPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Kasir (POS)</h2>
-          <p className="text-muted">
-            Point of Sale - Kelola pesanan pelanggan
-          </p>
+          <p className="text-muted">Point of Sale - Kelola pesanan pelanggan</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Menu Section */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -94,67 +293,27 @@ export default function POSPage() {
             </CardHeader>
             <CardBody>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {menuItems.map((item) => (
+                {products.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => addToCart(item)}
+                    onClick={() => handleProductClick(item)}
                     className="p-4 border border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-left"
                   >
                     <Badge variant="secondary" className="mb-2">
-                      {item.category}
+                      {item.category_name}
                     </Badge>
                     <p className="font-medium">{item.name}</p>
                     <p className="text-primary font-bold mt-1">
-                      Rp {item.price.toLocaleString()}
+                      Rp {item.base_price.toLocaleString()}
                     </p>
                   </button>
                 ))}
+                {products.length === 0 && (
+                  <p className="col-span-full text-center text-muted py-8">
+                    Belum ada produk. Tambah produk di menu Produk.
+                  </p>
+                )}
               </div>
-            </CardBody>
-          </Card>
-
-          {/* Active Orders - Using Konsta List for mobile-friendly styling */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Pesanan Aktif</CardTitle>
-            </CardHeader>
-            <CardBody className="p-0">
-              {/* Konsta App wrapper for consistent styling */}
-              <App theme="material" dark={false}>
-                <List strongIos outlineIos className="!my-0">
-                  {orders.map((order) => (
-                    <ListItem
-                      key={order.id}
-                      title={`${order.name} (${order.quantity}x)`}
-                      subtitle={order.tableNo}
-                      after={
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-primary mr-2">
-                            Rp {(order.price * order.quantity).toLocaleString()}
-                          </span>
-                          <button
-                            onClick={() => completeOrder(order.id)}
-                            className="size-8 rounded-full bg-success/10 flex items-center justify-center text-success hover:bg-success/20 transition-colors"
-                          >
-                            <CheckIcon className="size-4" />
-                          </button>
-                          <button
-                            onClick={() => cancelOrder(order.id)}
-                            className="size-8 rounded-full bg-danger/10 flex items-center justify-center text-danger hover:bg-danger/20 transition-colors"
-                          >
-                            <XIcon className="size-4" />
-                          </button>
-                        </div>
-                      }
-                    />
-                  ))}
-                </List>
-              </App>
-              {orders.length === 0 && (
-                <p className="text-center text-muted py-8">
-                  Tidak ada pesanan aktif
-                </p>
-              )}
             </CardBody>
           </Card>
         </div>
@@ -170,42 +329,48 @@ export default function POSPage() {
             </CardHeader>
             <CardBody className="space-y-4">
               {cart.length === 0 ? (
-                <p className="text-center text-muted py-8">
-                  Keranjang kosong
-                </p>
+                <p className="text-center text-muted py-8">Keranjang kosong</p>
               ) : (
                 <>
                   {cart.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg"
+                      className="p-3 bg-secondary/30 rounded-lg"
                     >
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{item.name}</p>
-                        <p className="text-xs text-muted">
-                          Rp {item.price.toLocaleString()} x {item.quantity}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateQuantity(item.id, -1)}
-                          className="size-7 rounded bg-background border flex items-center justify-center hover:bg-secondary"
-                        >
-                          <MinusIcon className="size-3" />
-                        </button>
-                        <span className="w-6 text-center font-medium">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.id, 1)}
-                          className="size-7 rounded bg-background border flex items-center justify-center hover:bg-secondary"
-                        >
-                          <PlusIcon className="size-3" />
-                        </button>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{item.name}</p>
+                          {item.modifiers.length > 0 && (
+                            <p className="text-xs text-muted mt-0.5">
+                              +{" "}
+                              {item.modifiers.map((m) => m.itemName).join(", ")}
+                            </p>
+                          )}
+                          <p className="text-xs text-primary font-medium mt-1">
+                            Rp {item.totalPrice.toLocaleString()} x{" "}
+                            {item.quantity}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => updateQuantity(item.id, -1)}
+                            className="size-7 rounded bg-background border flex items-center justify-center hover:bg-secondary"
+                          >
+                            <MinusIcon className="size-3" />
+                          </button>
+                          <span className="w-6 text-center font-medium">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.id, 1)}
+                            className="size-7 rounded bg-background border flex items-center justify-center hover:bg-secondary"
+                          >
+                            <PlusIcon className="size-3" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
-
                   <div className="border-t pt-4">
                     <div className="flex justify-between mb-4">
                       <span className="text-muted">Total</span>
@@ -223,6 +388,94 @@ export default function POSPage() {
           </Card>
         </div>
       </div>
+
+      {/* Modifier Selection Modal */}
+      {showModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-background rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div className="p-4 border-b sticky top-0 bg-background z-10">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-lg">{selectedProduct.name}</h3>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-2 hover:bg-secondary rounded-lg"
+                >
+                  <XIcon className="size-5" />
+                </button>
+              </div>
+              <p className="text-primary font-bold">
+                Rp {selectedProduct.base_price.toLocaleString()}
+              </p>
+            </div>
+
+            <div className="p-4 space-y-6">
+              {getProductModifierGroups(selectedProduct.id).map((group) => (
+                <div key={group.id}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <h4 className="font-semibold">{group.name}</h4>
+                    {group.required && (
+                      <Badge variant="danger" size="sm">
+                        Wajib
+                      </Badge>
+                    )}
+                    {group.type === "MULTIPLE" && (
+                      <Badge variant="secondary" size="sm">
+                        Max {group.max_select}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {group.items.map((item) => {
+                      const isSelected = selectedModifiers.some(
+                        (m) => m.itemId === item.id
+                      );
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => toggleModifier(group, item)}
+                          className={`w-full p-3 rounded-lg border flex items-center justify-between transition-all ${
+                            isSelected
+                              ? "border-primary bg-primary/10"
+                              : "border-border hover:border-primary/50"
+                          }`}
+                        >
+                          <span>{item.name}</span>
+                          <div className="flex items-center gap-2">
+                            {item.price_adjust > 0 && (
+                              <span className="text-sm text-muted">
+                                +Rp {item.price_adjust.toLocaleString()}
+                              </span>
+                            )}
+                            {isSelected && (
+                              <CheckIcon className="size-4 text-primary" />
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 border-t sticky bottom-0 bg-background">
+              <div className="flex justify-between mb-3">
+                <span>Total</span>
+                <span className="font-bold text-primary">
+                  Rp{" "}
+                  {(
+                    selectedProduct.base_price +
+                    selectedModifiers.reduce((s, m) => s + m.priceAdjust, 0)
+                  ).toLocaleString()}
+                </span>
+              </div>
+              <Button block size="lg" onClick={confirmModifiers}>
+                Tambah ke Keranjang
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

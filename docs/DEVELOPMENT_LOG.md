@@ -1,52 +1,96 @@
 # Laporan Progres & Riwayat Implementasi
 
-Laporan ini merangkum langkah-langkah pengembangan dari awal hingga akhir, termasuk kendala teknis dan solusinya.
+> **Update Terakhir**: 31 Desember 2024
 
-## 1. Tahap Persiapan (Awal)
+Laporan ini merangkum langkah-langkah pengembangan dari awal hingga saat ini.
 
-- **Migrasi Database**: Penyiapan skema Supabase untuk multi-branch (`branches`, `products`, `transactions`).
-- **Setup UI**: Penyatuan Konsta UI (Mobile) dan Selia Components (Dashboard).
+---
+
+## 1. Tahap Persiapan
+
+| Fitur                            | Status     |
+| -------------------------------- | ---------- |
+| Migrasi Database Supabase        | ✅ Selesai |
+| Setup UI (Konsta + Selia)        | ✅ Selesai |
+| Struktur Route `/admin` & `/app` | ✅ Selesai |
+
+---
 
 ## 2. Implementasi Otentikasi
 
-- **Masalah**: Login awalnya hanya menggunakan placeholder.
-- **Solusi**: Integrasi Supabase Auth dengan Magic Link (Email) dan Google OAuth.
-- **Kendala**: Muncul error `Context not found` pada Admin Dashboard.
-- **Perbaikan**: Membungkus `AdminLayout` dengan `AuthProvider`.
+- **Magic Link (Email)**: Pengguna dapat login via link yang dikirim ke email
+- **Google OAuth**: Login dengan akun Google
+- **Reset Password**: Alur lupa password dengan email konfirmasi
+- **Kendala & Solusi**:
+  - `Context not found` → Dibungkus `AuthProvider` di `AdminLayout`
+
+---
 
 ## 3. Integrasi Email (Brevo)
 
-- **Langkah**: Membuat API Route untuk menyembunyikan API Key Brevo.
-- **Masalah**: Error pengiriman karena tipe data `items` berupa `any`.
-- **Perbaikan**: Membuat Interface `OrderItem` untuk memastikan data yang dikirim ke template email selalu valid.
+- **API Route**: `src/app/api/send-email/route.ts` untuk menyembunyikan API Key
+- **Email Templates**:
+  - Notifikasi Order Success (dengan detail item)
+  - Reset Password Link
+- **Logging**: Setiap pengiriman tercatat di tabel `email_logs`
 
-## 4. Fitur Password Reset
+---
 
-- **Langkah**: Membuat halaman `/forgot-password` dan `/reset-password`.
-- **Masalah**: Pengguna bingung cara mendapatkan link reset.
-- **Solusi**: Menambahkan notifikasi visual yang jelas setelah email terkirim dan fitur "Kembali ke Login".
+## 4. Fitur Multi-Branch & Roles
 
-## 5. Pembersihan Kode & Standarisasi (Terakhir)
+- **Tabel Branches**: Mendukung banyak cabang
+- **Role-Based Access**: ADMIN_PUSAT, BRANCH_ADMIN, KASIR, CUSTOMER
+- **Isolasi Data**: Filter by `branch_id`
 
-- **Masalah**: Muncul banyak _Warning_ dari IDE terkait Tailwind CSS v4.
-- **Perbaikan**:
-  - Mengubah sintaks `!bg-green` menjadi `bg-green!`.
-  - Menghapus properti ilegal seperti `size` pada komponen `Link` Next.js.
-  - Menghapus import yang tidak terpakai (`unused imports`).
+---
 
-## Ringkasan Error & Solusi Penting
+## 5. Vouchers & Points System
 
-| Masalah                    | Penyebab                     | Solusi                                                                                             |
-| :------------------------- | :--------------------------- | :------------------------------------------------------------------------------------------------- |
-| `Unknown at rule @theme`   | Fitur baru Tailwind v4       | Diabaikan (False Positive) karena secara fungsional benar.                                         |
-| `large` prop tidak dikenal | Mismatch dengan Selia Button | Diganti menjadi `size="lg"`.                                                                       |
-| `any` type error           | Typescript Strict Mode       | Dibuatkan Interface khusus untuk data kompleks.                                                    |
-| Checkout Gagal di Mobile   | `branch_id` kosong           | Ditambahkan placeholder UUID branch default dan pengambilan data branch otomatis dari user profil. |
+- **Tabel Vouchers**: Kode diskon per branch
+- **Tabel Customer Points**: Poin loyalty per pelanggan
+- **Trigger Auto-Add Points**: 1 poin per Rp 1.000 transaksi
 
-## Status Saat Ini
+---
 
-- [x] Login (Magic Link & Google)
-- [x] Keranjang & Checkout
-- [x] Notifikasi Email Detail Belanja
-- [x] Lupa Password & Reset Flow
-- [x] Pembersihan Kode (Linting)
+## 6. Email Monitoring Dashboard
+
+- **Halaman**: `/admin/email-logs`
+- **Fitur**: Riwayat pengiriman, status Success/Failed, detail error
+- **RLS**: Hanya Admin yang bisa melihat
+
+---
+
+## 7. Product Modifier System
+
+- **Modifier Groups**: grp-topping, grp-size, grp-level
+- **Modifier Items**: Pilihan dalam setiap grup dengan price_adjust
+- **POS Integration**: Popup pemilihan modifier saat tambah produk
+- **Admin CRUD**: Halaman `/admin/modifiers`
+
+---
+
+## 8. Pembersihan Kode
+
+| Masalah             | Solusi                              |
+| ------------------- | ----------------------------------- |
+| `!bg-green` syntax  | Diubah ke `bg-green!` (Tailwind v4) |
+| `size` prop di Link | Dihapus (bukan prop valid)          |
+| `any` type          | Dibuatkan Interface khusus          |
+| `@theme` warning    | Diabaikan (false-positive)          |
+
+---
+
+## Status Fitur
+
+| Modul                       | Status |
+| --------------------------- | ------ |
+| Login (Magic Link & Google) | ✅     |
+| Keranjang & Checkout        | ✅     |
+| Notifikasi Email            | ✅     |
+| Lupa Password               | ✅     |
+| Email Monitoring            | ✅     |
+| Product Modifiers           | ✅     |
+| Admin Dashboard             | ✅     |
+| POS/Kasir                   | ✅     |
+| Voucher Management          | ✅     |
+| Dummy Data & Docs           | ✅     |

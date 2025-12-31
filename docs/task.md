@@ -44,3 +44,10 @@
   - [x] Add `email_logs` table to Supabase schema
   - [x] Implement logging in `api/send-email`
   - [x] Create Admin Log Page `/admin/email-logs`
+- [x] Product Modifier Integration
+  - [x] Integrate modifiers in POS/Kasir page (popup selection)
+  - [x] Store selected modifiers in cart and transaction_details
+  - [x] Create Admin CRUD page for Modifier Groups & Items
+- [x] Documentation & Data
+  - [x] Update all .md files with current project state
+  - [x] Create `dummy_data.sql` for sample products

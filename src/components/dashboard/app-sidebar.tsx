@@ -36,6 +36,7 @@ const menuItems = [
   { href: "/admin/pos", label: "Kasir (POS)", icon: ShoppingBagIcon },
   { href: "/admin/vouchers", label: "Voucher & Promo", icon: TicketIcon },
   { href: "/admin/products", label: "Produk", icon: Package2Icon },
+  { href: "/admin/modifiers", label: "Modifier", icon: SettingsIcon },
   { href: "/admin/customers", label: "Pelanggan", icon: UsersIcon },
   { href: "/admin/reports", label: "Laporan", icon: BarChart3Icon },
 ];

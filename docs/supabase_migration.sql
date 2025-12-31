@@ -11,6 +11,9 @@ DROP TABLE IF EXISTS stock_log CASCADE;
 DROP TABLE IF EXISTS transaction_details CASCADE;
 DROP TABLE IF EXISTS transactions CASCADE;
 DROP TABLE IF EXISTS vouchers CASCADE;
+DROP TABLE IF EXISTS product_modifiers CASCADE;
+DROP TABLE IF EXISTS modifier_items CASCADE;
+DROP TABLE IF EXISTS modifier_groups CASCADE;
 DROP TABLE IF EXISTS branch_products CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
@@ -122,7 +125,35 @@ CREATE TABLE transaction_details (
     product_name TEXT NOT NULL,
     qty INTEGER NOT NULL,
     price DECIMAL(12,2) NOT NULL, -- Price at the time of sale
-    total_price DECIMAL(12,2) GENERATED ALWAYS AS (qty * price) STORED
+    total_price DECIMAL(12,2) GENERATED ALWAYS AS (qty * price) STORED,
+    modifiers JSONB -- Stores selected modifiers [{groupId, itemId, name, priceAdjust}]
+);
+
+-- 12. MODIFIER GROUPS TABLE
+CREATE TABLE modifier_groups (
+    id TEXT PRIMARY KEY, -- e.g. 'grp-topping', 'grp-size'
+    name TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('SINGLE', 'MULTIPLE')),
+    required BOOLEAN DEFAULT FALSE,
+    min_select INT DEFAULT 0,
+    max_select INT DEFAULT 1
+);
+
+-- 13. MODIFIER ITEMS TABLE
+CREATE TABLE modifier_items (
+    id TEXT PRIMARY KEY, -- e.g. 'mod-coklat', 'size-m'
+    group_id TEXT REFERENCES modifier_groups(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    price_adjust DECIMAL(12,2) DEFAULT 0,
+    available BOOLEAN DEFAULT TRUE
+);
+
+-- 14. PRODUCT MODIFIERS (Junction Table)
+CREATE TABLE product_modifiers (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+    group_id TEXT REFERENCES modifier_groups(id) ON DELETE CASCADE,
+    UNIQUE (product_id, group_id)
 );
 
 -- 10. STOCK LOG TABLE
@@ -170,12 +201,18 @@ ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transaction_details ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stock_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE modifier_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE modifier_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_modifiers ENABLE ROW LEVEL SECURITY;
 
 -- Allow anyone to read branches and products
 CREATE POLICY "Public read access for branches" ON branches FOR SELECT USING (true);
 CREATE POLICY "Public read access for categories" ON categories FOR SELECT USING (true);
 CREATE POLICY "Public read access for products" ON products FOR SELECT USING (true);
 CREATE POLICY "Public read access for branch_products" ON branch_products FOR SELECT USING (true);
+CREATE POLICY "Public read access for modifier_groups" ON modifier_groups FOR SELECT USING (true);
+CREATE POLICY "Public read access for modifier_items" ON modifier_items FOR SELECT USING (true);
+CREATE POLICY "Public read access for product_modifiers" ON product_modifiers FOR SELECT USING (true);
 
 -- Allow authenticated customers to insert orders
 CREATE POLICY "Authenticated users can insert transactions" ON transactions FOR INSERT TO authenticated WITH CHECK (true);
@@ -198,7 +235,11 @@ CREATE POLICY "Allow server-side logging" ON email_logs FOR INSERT WITH CHECK (t
 -- ===============================================
 -- (Trigger for adding points after transaction)
 CREATE OR REPLACE FUNCTION add_points_on_purchase()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
     IF NEW.customer_id IS NOT NULL THEN
         INSERT INTO customer_points (user_id, total_points)
@@ -209,7 +250,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 CREATE TRIGGER trigger_add_points
 AFTER INSERT ON transactions
@@ -225,3 +266,30 @@ INSERT INTO branches (name, address) VALUES
 
 INSERT INTO users (username, phone, name, role) VALUES
 ('pusat', '081122334455', 'Admin Pusat', 'ADMIN_PUSAT');
+
+-- MODIFIER GROUPS DATA
+INSERT INTO modifier_groups (id, name, type, required, min_select, max_select) VALUES
+('grp-topping', 'Pilih Topping', 'MULTIPLE', FALSE, 0, 5),
+('grp-size', 'Pilih Ukuran', 'SINGLE', TRUE, 1, 1),
+('grp-level', 'Level Pedas', 'SINGLE', FALSE, 0, 1);
+
+-- MODIFIER ITEMS DATA
+INSERT INTO modifier_items (id, group_id, name, price_adjust, available) VALUES
+-- Toppings
+('mod-coklat', 'grp-topping', 'Topping Coklat', 3000, TRUE),
+('mod-keju', 'grp-topping', 'Topping Keju', 5000, TRUE),
+('mod-kacang', 'grp-topping', 'Topping Kacang', 2000, TRUE),
+-- Sizes
+('size-s', 'grp-size', 'Small', 0, TRUE),
+('size-m', 'grp-size', 'Medium', 5000, TRUE),
+('size-l', 'grp-size', 'Large', 10000, TRUE),
+-- Levels
+('level-biasa', 'grp-level', 'Biasa', 0, TRUE),
+('level-pedas', 'grp-level', 'Pedas', 0, TRUE),
+('level-extra', 'grp-level', 'Extra Pedas', 2000, TRUE);
+
+-- PRODUCT MODIFIERS DATA
+INSERT INTO product_modifiers (product_id, group_id) VALUES
+('prod-1', 'grp-topping'),
+('prod-1', 'grp-size'),
+('prod-1', 'grp-level');
