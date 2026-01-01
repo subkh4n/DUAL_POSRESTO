@@ -29,7 +29,7 @@ export default function SplashScreen() {
       </div>
 
       {/* Animated Overlay Gradient */}
-      <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#2a0505] via-transparent to-transparent opacity-80" />
+      <div className="absolute inset-0 z-10 bg-linear-to-t from-[#2a0505] via-transparent to-transparent opacity-80" />
 
       {/* Floating Elements (Decorative) */}
       <div className="absolute top-[15%] left-[10%] size-12 bg-[#8ec641]/20 rounded-full blur-xl animate-float-slow z-20" />

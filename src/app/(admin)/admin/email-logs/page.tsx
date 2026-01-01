@@ -2,17 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import {
-  Card,
-  CardHeader,
-  CardBody,
-  CardTitle,
-  CardDescription,
-} from "@/components/selia/card";
+import { Card, CardHeader, CardBody } from "@/components/selia/card";
 import { Badge } from "@/components/selia/badge";
 import { Button } from "@/components/selia/button";
 import {
-  MailIcon,
   CheckCircle2Icon,
   XCircleIcon,
   SearchIcon,
@@ -20,8 +13,17 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/selia/input";
 
+interface EmailLog {
+  id: string;
+  recipient: string;
+  subject: string;
+  status: string;
+  sent_at: string;
+  error_message?: string;
+}
+
 export default function EmailLogsPage() {
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -39,7 +41,10 @@ export default function EmailLogsPage() {
   };
 
   useEffect(() => {
-    fetchLogs();
+    void (async () => {
+      await fetchLogs();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredLogs = logs.filter(
