@@ -1,167 +1,286 @@
 "use client";
 
 import { StatCard } from "@/components/dashboard/stat-card";
-import { Card, CardHeader, CardBody, CardTitle, CardDescription } from "@/components/selia/card";
+import { SalesChart } from "@/components/dashboard/sales-chart";
+import { formatIDR } from "@/lib/utils";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  CardTitle,
+  CardFooter,
+  CardHeaderAction,
+} from "@/components/selia/card";
 import { Badge } from "@/components/selia/badge";
 import { Button } from "@/components/selia/button";
+import { Stack, Text } from "@/components/selia/stack";
 import {
-  DollarSignIcon,
+  Item,
+  ItemMedia,
+  ItemContent,
+  ItemTitle,
+  ItemDescription,
+  ItemMeta,
+} from "@/components/selia/item";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/selia/table";
+import { Separator } from "@/components/selia/separator";
+import {
   ShoppingBagIcon,
-  UsersIcon,
-  TrendingUpIcon,
+  Package2Icon,
+  Users2Icon,
+  TagsIcon,
   ArrowRightIcon,
-  ClockIcon,
+  ArrowRightCircleIcon,
 } from "lucide-react";
 
+// Stats data
 const stats = [
   {
-    title: "Pendapatan Hari Ini",
-    value: "Rp 2.450.000",
-    change: "+12.5%",
-    trend: "up" as const,
-    icon: DollarSignIcon
-  },
-  {
-    title: "Total Pesanan",
-    value: "156",
+    icon: ShoppingBagIcon,
+    title: "Total Sales",
+    value: formatIDR(12340000),
     change: "+8.2%",
-    trend: "up" as const,
-    icon: ShoppingBagIcon
+    changeType: "increase" as const,
+    iconVariant: "info-subtle" as const,
   },
   {
-    title: "Pelanggan Baru",
-    value: "23",
-    change: "-2.4%",
-    trend: "down" as const,
-    icon: UsersIcon
+    icon: Users2Icon,
+    title: "Customers",
+    value: formatIDR(3210),
+    change: "+4.1%",
+    changeType: "increase" as const,
+    iconVariant: "warning-subtle" as const,
   },
   {
-    title: "Rata-rata Transaksi",
-    value: "Rp 45.000",
-    change: "+5.1%",
-    trend: "up" as const,
-    icon: TrendingUpIcon
+    icon: Package2Icon,
+    title: "Orders",
+    value: formatIDR(1520),
+    change: "-2.3%",
+    changeType: "decrease" as const,
+    iconVariant: "success-subtle" as const,
+  },
+  {
+    icon: TagsIcon,
+    title: "Revenue",
+    value: formatIDR(24580000),
+    change: "+6.9%",
+    changeType: "increase" as const,
+    iconVariant: "purple-subtle" as const,
   },
 ];
 
+// Best selling products
+const bestSelling = [
+  {
+    name: "Special Fried Rice",
+    price: 25000,
+    sales: 45,
+    emoji: "🍛",
+  },
+  {
+    name: "Honey Grilled Chicken",
+    price: 35000,
+    sales: 40,
+    emoji: "🍗",
+  },
+  {
+    name: "Chicken Noodle with Meatball",
+    price: 20000,
+    sales: 32,
+    emoji: "🍜",
+  },
+  {
+    name: "Sweet Iced Tea",
+    price: 5000,
+    sales: 28,
+    emoji: "🧊",
+  },
+  {
+    name: "Chicken Satay",
+    price: 30000,
+    sales: 21,
+    emoji: "🍢",
+  },
+];
+
+// Recent orders
 const recentOrders = [
-  { id: "#001", customer: "Ahmad Wijaya", items: 3, total: 75000, status: "completed", time: "10 menit lalu" },
-  { id: "#002", customer: "Budi Santoso", items: 2, total: 45000, status: "preparing", time: "15 menit lalu" },
-  { id: "#003", customer: "Citra Dewi", items: 5, total: 125000, status: "pending", time: "20 menit lalu" },
-  { id: "#004", customer: "Dewi Sartika", items: 1, total: 25000, status: "completed", time: "25 menit lalu" },
-  { id: "#005", customer: "Eko Prasetyo", items: 4, total: 95000, status: "preparing", time: "30 menit lalu" },
+  {
+    id: "5678",
+    customer: "Ahmad Wijaya",
+    date: "2025-06-01",
+    total: 532000,
+    status: "Completed",
+  },
+  {
+    id: "5683",
+    customer: "Budi Santoso",
+    date: "2025-06-02",
+    total: 89000,
+    status: "Pending",
+  },
+  {
+    id: "5690",
+    customer: "Citra Dewi",
+    date: "2025-06-04",
+    total: 250000,
+    status: "Cancelled",
+  },
+  {
+    id: "5765",
+    customer: "Dewi Sartika",
+    date: "2025-06-06",
+    total: 1732000,
+    status: "Completed",
+  },
+  {
+    id: "5892",
+    customer: "Eko Prasetyo",
+    date: "2025-06-08",
+    total: 423000,
+    status: "Processing",
+  },
+  {
+    id: "5921",
+    customer: "Fitri Handayani",
+    date: "2025-06-09",
+    total: 205000,
+    status: "Pending",
+  },
+  {
+    id: "6002",
+    customer: "Gunawan Putra",
+    date: "2025-06-10",
+    total: 1225000,
+    status: "Completed",
+  },
 ];
 
-const topProducts = [
-  { name: "Nasi Goreng Spesial", orders: 45, revenue: 1125000 },
-  { name: "Ayam Bakar Madu", orders: 38, revenue: 1330000 },
-  { name: "Mie Ayam Bakso", orders: 32, revenue: 640000 },
-  { name: "Es Teh Manis", orders: 89, revenue: 445000 },
-];
+const statusVariants: Record<
+  string,
+  "success" | "warning" | "danger" | "primary"
+> = {
+  Completed: "success",
+  Pending: "warning",
+  Cancelled: "danger",
+  Processing: "primary",
+};
 
 export default function AdminDashboard() {
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted">
-            Selamat datang! Berikut ringkasan bisnis Anda hari ini.
-          </p>
-        </div>
-        <Button variant="primary">
-          <ClockIcon className="size-4" />
-          Laporan Hari Ini
-        </Button>
-      </div>
-
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}
       </div>
 
-      {/* Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Recent Orders - 2 columns */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Pesanan Terbaru</CardTitle>
-              <CardDescription>5 pesanan terakhir dari pelanggan</CardDescription>
-            </div>
-            <Button variant="outline" size="sm">
-              Lihat Semua
+      {/* Chart & Best Selling Row */}
+      <div className="flex gap-4 lg:flex-nowrap flex-wrap">
+        {/* Sales Chart */}
+        <div className="w-full lg:w-8/12">
+          <SalesChart />
+        </div>
+
+        {/* Best Selling */}
+        <div className="w-full lg:w-4/12">
+          <Card>
+            <CardHeader>
+              <CardTitle>Best Selling</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <Stack>
+                {bestSelling.map((product, index) => (
+                  <div key={product.name}>
+                    <Item render={<a href="#" />} variant="plain">
+                      <ItemMedia>
+                        <span className="text-3xl flex items-center justify-center w-full h-full">
+                          {product.emoji}
+                        </span>
+                      </ItemMedia>
+                      <ItemContent>
+                        <ItemTitle>{product.name}</ItemTitle>
+                        <ItemDescription>
+                          {formatIDR(product.price)}
+                        </ItemDescription>
+                      </ItemContent>
+                      <ItemMeta className="ml-auto shrink-0">
+                        {product.sales} sales
+                      </ItemMeta>
+                    </Item>
+                    {index < bestSelling.length - 1 && <Separator />}
+                  </div>
+                ))}
+              </Stack>
+            </CardBody>
+            <CardFooter>
+              <Button variant="secondary" block size="lg" className="gap-2">
+                View All <ArrowRightCircleIcon className="size-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+
+      {/* Recent Orders Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Orders</CardTitle>
+          <CardHeaderAction>
+            <Button variant="secondary" className="gap-2">
+              View All
               <ArrowRightIcon className="size-4" />
             </Button>
-          </CardHeader>
-          <CardBody className="p-0">
-            <div className="divide-y divide-border">
-              {recentOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between p-4 hover:bg-secondary/30 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <ShoppingBagIcon className="size-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{order.id} - {order.customer}</p>
-                      <p className="text-sm text-muted">{order.items} item • {order.time}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <Badge
-                      variant={
-                        order.status === "completed" ? "success" :
-                        order.status === "preparing" ? "warning" : "secondary"
-                      }
-                    >
-                      {order.status === "completed" ? "Selesai" :
-                       order.status === "preparing" ? "Diproses" : "Pending"}
-                    </Badge>
-                    <span className="font-semibold text-right min-w-20">
-                      Rp {order.total.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Top Products - 1 column */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Produk Terlaris</CardTitle>
-            <CardDescription>Berdasarkan jumlah pesanan</CardDescription>
-          </CardHeader>
-          <CardBody className="p-0">
-            <div className="divide-y divide-border">
-              {topProducts.map((product, index) => (
-                <div
-                  key={product.name}
-                  className="flex items-center gap-4 p-4"
-                >
-                  <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{product.name}</p>
-                    <p className="text-sm text-muted">{product.orders} pesanan</p>
-                  </div>
-                  <span className="text-sm font-medium">
-                    Rp {(product.revenue / 1000).toFixed(0)}K
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      </div>
+          </CardHeaderAction>
+        </CardHeader>
+        <CardBody>
+          <TableContainer>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>
+                      <Text className="text-muted">{order.id}</Text>
+                    </TableCell>
+                    <TableCell>
+                      <a href="#" className="text-primary hover:underline">
+                        {order.customer}
+                      </a>
+                    </TableCell>
+                    <TableCell>{order.date}</TableCell>
+                    <TableCell className="font-medium">
+                      {formatIDR(order.total)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusVariants[order.status]}>
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardBody>
+      </Card>
     </div>
   );
 }

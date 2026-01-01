@@ -1,37 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zencode POS 🚀
 
-## Getting Started
+**Zencode POS** is a premium, professional-grade Point of Sale (POS) system designed by **Zencode (Professional Software House)**. It features a hybrid architecture that seamlessly integrates a powerful desktop-optimized admin dashboard with a sleek, mobile-first customer ordering application.
 
-First, run the development server:
+## ✨ Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Hybrid Monolith Architecture**: One codebase, two specialized interfaces.
+- **Role-Based Access Control (RBAC)**: secure access for `superadmin`, `admin`, `cashier`, and `customer`.
+- **Progressive Web App (PWA)**: Installable, offline-ready, and mobile-optimized.
+- **Multi-Branch Support**: Isolate and manage data across multiple business locations.
+- **Product Modifier System**: Custom options (toppings, sizes, levels) with price adjustments.
+- **Loyalty & Rewards**: Integrated voucher system and automated customer points.
+- **Real-time Notifications**: Order confirmations and security alerts via transactional email (Brevo).
+- **Global Ready**: Full English translation and Indonesian IDR number formatting.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Frontend**: Next.js 14, Tailwind CSS v4, Lucide Icons.
+- **UI Kits**: Selia (Admin Dashboard), Konsta UI (Mobile App).
+- **Backend/DB**: Supabase (PostgreSQL + Realtime).
+- **Communication**: Brevo (SMTP/Transactional API).
+- **Deployment**: Vercel.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 Getting Started
 
-## Learn More
+1. **Clone & Install**:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   git clone <repo-url>
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Supabase Setup**:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   - Run `docs/supabase_migration.sql` in Supabase SQL Editor.
+   - Run `docs/sql/create_test_users.sql` to initialize roles and staff accounts.
 
-## Deploy on Vercel
+3. **Environment Variables**:
+   Create a `.env.local` file with:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+   BREVO_API_KEY=your_key
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# DUAL_POSRESTO
+4. **Development**:
+   ```bash
+   npm run dev
+   ```
+
+## 📖 Documentation
+
+Detailed documentation can be found in the `/docs` directory:
+
+- [System Walkthrough](docs/WALKTHROUGH.md)
+- [Implementation Plan](docs/implementation_plan.md)
+- [Development Log](docs/DEVELOPMENT_LOG.md)
+- [Task Checklist](docs/task.md)
+
+---
+
+© 2026 Zencode (Professional Software House). All rights reserved.

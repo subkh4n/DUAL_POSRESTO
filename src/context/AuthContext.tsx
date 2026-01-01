@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 
-export type UserRole = "AdminPusat" | "BranchAdmin" | "Customer";
+export type UserRole = "superadmin" | "admin" | "cashier" | "customer";
 
 interface UserProfile {
   id: string;
@@ -20,16 +20,16 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string) => Promise<void>;
+  signInWithPassword: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  login: (
-    phone: string,
-    role: UserRole,
-    name?: string,
-    branchId?: string
-  ) => void; // Legacy
   logout: () => Promise<void>;
   isAuthenticated: boolean;
-  isAdminPusat: boolean;
+  isSuperAdmin: boolean;
+  isAdmin: boolean;
+  isCashier: boolean;
+  isCustomer: boolean;
+  canAccessDashboard: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,32 +39,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Check active session
     const getInitialSession = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
         await fetchUserProfile(session.user);
-      } else {
-        // Fallback to localStorage for legacy simple login
-        const savedUser = localStorage.getItem("resto_user");
-        if (savedUser) setUser(JSON.parse(savedUser));
       }
       setLoading(false);
     };
 
     getInitialSession();
 
-    // 2. Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
         await fetchUserProfile(session.user);
       } else {
-        // Only clear if no legacy user
-        if (!localStorage.getItem("resto_user")) setUser(null);
+        setUser(null);
       }
       setLoading(false);
     });
@@ -73,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("users")
       .select("*")
       .eq("id", supabaseUser.id)
@@ -88,12 +81,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         branchId: data.branch_id,
       });
     } else {
-      // New user from Google/Auth
+      // New user - default to customer role
       setUser({
         id: supabaseUser.id,
         email: supabaseUser.email,
         name: supabaseUser.user_metadata?.full_name,
-        role: "Customer",
+        role: "customer",
       });
     }
   };
@@ -108,9 +101,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithEmail = async (email: string) => {
-    // For simplicity in this demo, we'll use OTP or direct sign in if configured
-    // This logic can be refined based on user preference (OTP vs Password)
-    await supabase.auth.signInWithOtp({ email });
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    if (error) throw error;
+  };
+
+  const signInWithPassword = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw error;
+  };
+
+  const signUp = async (email: string, password: string, name: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+        },
+      },
+    });
+    if (error) throw error;
   };
 
   const resetPassword = async (email: string) => {
@@ -120,22 +133,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
-  const login = (
-    phone: string,
-    role: UserRole,
-    name?: string,
-    branchId?: string
-  ) => {
-    const legacyUser = { id: "legacy", phone, name, role, branchId };
-    setUser(legacyUser);
-    localStorage.setItem("resto_user", JSON.stringify(legacyUser));
-  };
-
   const logout = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem("resto_user");
     setUser(null);
   };
+
+  const isSuperAdmin = user?.role === "superadmin";
+  const isAdmin = user?.role === "admin";
+  const isCashier = user?.role === "cashier";
+  const isCustomer = user?.role === "customer";
+  const canAccessDashboard = isSuperAdmin || isAdmin || isCashier;
 
   return (
     <AuthContext.Provider
@@ -144,11 +151,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         signInWithGoogle,
         signInWithEmail,
+        signInWithPassword,
+        signUp,
         resetPassword,
-        login,
         logout,
         isAuthenticated: !!user,
-        isAdminPusat: user?.role === "AdminPusat",
+        isSuperAdmin,
+        isAdmin,
+        isCashier,
+        isCustomer,
+        canAccessDashboard,
       }}
     >
       {children}

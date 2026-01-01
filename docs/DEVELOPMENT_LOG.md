@@ -1,6 +1,6 @@
 # Laporan Progres & Riwayat Implementasi
 
-> **Update Terakhir**: 31 Desember 2024
+> **Update Terakhir**: 1 Januari 2026
 
 Laporan ini merangkum langkah-langkah pengembangan dari awal hingga saat ini.
 
@@ -80,17 +80,39 @@ Laporan ini merangkum langkah-langkah pengembangan dari awal hingga saat ini.
 
 ---
 
-## Status Fitur
+---
 
-| Modul                       | Status |
-| --------------------------- | ------ |
-| Login (Magic Link & Google) | ✅     |
-| Keranjang & Checkout        | ✅     |
-| Notifikasi Email            | ✅     |
-| Lupa Password               | ✅     |
-| Email Monitoring            | ✅     |
-| Product Modifiers           | ✅     |
-| Admin Dashboard             | ✅     |
-| POS/Kasir                   | ✅     |
-| Voucher Management          | ✅     |
-| Dummy Data & Docs           | ✅     |
+## 9. Zencode Rebranding & PWA (Januari 2026)
+
+- **Rebranding**: Nama aplikasi diubah menjadi **Zencode**.
+- **PWA**: Penambahan `manifest.json`, `sw.js`, dan meta tags untuk mendukung Progressive Web App.
+- **UI/UX**: Redesign halaman login desktop menjadi lebih minimalis dan professional.
+- **Localization**: Standarisasi format angka ke IDR dan penerjemahan semua teks UI ke Bahasa Inggris.
+
+---
+
+## 10. Role-Based Authentication (RBAC) (Januari 2026)
+
+- **4 Roles**: `superadmin`, `admin`, `cashier`, `customer`.
+- **Desktop Login**: Khusus staff (superadmin, admin, cashier) menggunakan Email/Password.
+- **Mobile App**: Mendukung Sign Up untuk pelanggan baru.
+- **Supabase Integration**: AuthContext diperbarui untuk mendukung password-based login dan role mapping ke tabel `public.users`.
+- **SQL Setup**: Skrip `create_test_users.sql` untuk konfigurasi awal test accounts.
+
+---
+
+## Status Fitur (Update 1 Jan 2026)
+
+| Modul                        | Status |
+| ---------------------------- | ------ |
+| Login (Staff & Customer)     | ✅     |
+| Sign Up (Mobile)             | ✅     |
+| RBAC (4 Roles)               | ✅     |
+| Zencode Rebranding           | ✅     |
+| PWA Implementation           | ✅     |
+| English Translation (Global) | ✅     |
+| IDR Number Formatting        | ✅     |
+| Products & Modifiers         | ✅     |
+| Admin Dashboard              | ✅     |
+| POS/Kasir                    | ✅     |
+| Email Notifications          | ✅     |

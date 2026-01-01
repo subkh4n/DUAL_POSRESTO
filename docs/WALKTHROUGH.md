@@ -1,6 +1,6 @@
-# Walkthrough - Hybrid Monolith POS System
+# Walkthrough - Zencode POS (Hybrid Monolith)
 
-> **Update Terakhir**: 31 Desember 2024
+> **Update Terakhir**: 1 Januari 2026
 
 Sistem POS Restoran dengan arsitektur "Hybrid Monolith" - satu codebase untuk Dashboard Admin dan Aplikasi Mobile Pelanggan.
 
@@ -45,11 +45,12 @@ Sistem POS Restoran dengan arsitektur "Hybrid Monolith" - satu codebase untuk Da
 
 ## Fitur Utama
 
-### 1. Otentikasi
+### 1. Authentication (RBAC)
 
-- Magic Link (Email)
-- Google OAuth
-- Reset Password via Email
+- **Staff**: Email + Password login via desktop.
+- **Customer**: Google OAuth, Email+Password login, and Sign Up via mobile app.
+- **Roles**: superadmin, admin, cashier, customer.
+- **Reset Password**: Flow via email confirmation and secure update page.
 
 ### 2. POS/Kasir
 
@@ -76,10 +77,16 @@ Sistem POS Restoran dengan arsitektur "Hybrid Monolith" - satu codebase untuk Da
 - Isolasi data per cabang
 - Role-based access (ADMIN_PUSAT, BRANCH_ADMIN, KASIR)
 
-### 6. Loyalty System
+### 6. Loyalty & Vouchers
 
-- Voucher per branch
-- Customer Points (auto-add via trigger)
+- Voucher per branch.
+- Customer Points (auto-add via trigger: 1 point per Rp 1.000).
+
+### 7. Progressive Web App (PWA)
+
+- Offline-ready with Service Worker.
+- Add to Home Screen support (manifest.json).
+- Mobile-optimized interface.
 
 ---
 
@@ -102,11 +109,37 @@ Sistem POS Restoran dengan arsitektur "Hybrid Monolith" - satu codebase untuk Da
 
 ---
 
+## Role-Based Authentication (RBAC) Details
+
+### Authentication Flow
+
+- **Staff (Superadmin/Admin/Cashier)**: Managed via Email/Password login. Redirects to `/admin`.
+- **Customer**: Managed via Google OAuth or Email/Password signup/login. Redirects to `/app`.
+
+### Test Accounts (Password: `Test@123`)
+
+| Email               | Role       | Access Scope              |
+| ------------------- | ---------- | ------------------------- |
+| superadmin@test.com | superadmin | Global System Dashboard   |
+| admin@test.com      | admin      | Branch-specific Dashboard |
+| cashier@test.com    | cashier    | POS / Cashier Interface   |
+| customer@test.com   | customer   | Mobile Ordering App       |
+
+### Setup Instructions for Developers
+
+1. **SQL Configuration**: Run `docs/sql/create_test_users.sql` in the Supabase SQL Editor.
+2. **User Creation**: Manually add users in Supabase Auth with passwords, or use the mobile signup.
+3. **Role Assignment**: Ensure `public.users` table is updated with the correct `role` string.
+
+---
+
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
 - **Database**: Supabase (PostgreSQL + Realtime)
 - **Email**: Brevo (Transactional)
-- **UI Admin**: Selia Components (Shadcn style)
+- **UI Admin**: Selia Components (Zencode Style)
 - **UI Mobile**: Konsta UI
 - **Styling**: Tailwind CSS v4
+- **Formatting**: IDR (e.g., 1.000.000)
+- **Language**: English (International Ready)

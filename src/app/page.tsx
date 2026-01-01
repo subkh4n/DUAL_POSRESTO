@@ -13,11 +13,11 @@ export default function HomePage() {
       window.innerWidth < 768;
 
     if (isMobile) {
-      // Mobile: go to customer login
-      router.push("/login");
+      // Mobile: go to splash screen first, then auto-redirect to login
+      router.push("/app/splash");
     } else {
-      // Desktop: go to admin login
-      router.push("/admin/login");
+      // Desktop: go to desktop login page (separate from dashboard)
+      router.push("/desktop-login");
     }
   }, [router]);
 

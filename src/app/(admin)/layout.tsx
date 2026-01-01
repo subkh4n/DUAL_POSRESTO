@@ -2,10 +2,9 @@
 
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { Button } from "@/components/selia/button";
-import { Input } from "@/components/selia/input";
 import { Avatar } from "@/components/selia/avatar";
 import { Badge } from "@/components/selia/badge";
-import { BellIcon, SearchIcon, MenuIcon } from "lucide-react";
+import { BellIcon, MenuIcon } from "lucide-react";
 import { useState } from "react";
 import { BranchProvider } from "@/context/BranchContext";
 import { AuthProvider } from "@/context/AuthContext";
@@ -53,10 +52,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 >
                   <MenuIcon className="size-5 text-muted" />
                 </button>
-                <div className="relative hidden md:block">
-                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted" />
-                  <Input placeholder="Search..." className="w-64 pl-9" />
-                </div>
               </div>
 
               <div className="flex items-center gap-3">

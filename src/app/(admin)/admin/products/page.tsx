@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useAuth, UserRole } from "@/context/AuthContext";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
 import { Card } from "@/components/selia/card";
 import { Button } from "@/components/selia/button";
@@ -14,58 +14,118 @@ import {
   Edit2Icon,
   SearchIcon,
   PowerIcon,
+  Loader2Icon,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+
+interface Product {
+  id: string;
+  name: string;
+  base_price: number;
+  is_active: boolean;
+  category_id: string;
+  category_name?: string;
+}
 
 export default function ProductManagementPage() {
-  const { user, isAdminPusat } = useAuth();
+  const { isAdminPusat } = useAuth();
   const { currentBranch } = useBranch();
   const [search, setSearch] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState<string | null>(null);
 
-  // Simulated global products
-  const [products, setProducts] = useState([
-    { id: 1, name: "Nasi Goreng Spesial", price: 25000, category: "Makanan" },
-    { id: 2, name: "Mie Ayam Bakso", price: 20000, category: "Makanan" },
-    { id: 3, name: "Es Teh Manis", price: 5000, category: "Minuman" },
-    { id: 4, name: "Ayam Bakar Madu", price: 35000, category: "Makanan" },
-  ]);
+  // Fetch ALL products from Supabase (both active and inactive)
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
 
-  // Simulated branch availability (mapping product_id to active status in current branch)
-  const [branchAvailability, setBranchAvailability] = useState<{
-    [key: number]: boolean;
-  }>({
-    1: true,
-    2: true,
-    3: false, // Es Teh inactive in this branch
-    4: true,
-  });
+      // Fetch ALL products (active & inactive) for management page
+      const { data, error } = await supabase
+        .from("products")
+        .select("*, categories(name)")
+        .order("name");
 
-  const toggleAvailability = (productId: number) => {
-    setBranchAvailability((prev) => ({
-      ...prev,
-      [productId]: !prev[productId],
-    }));
+      if (error) {
+        console.error("Error fetching products:", error);
+      } else if (data) {
+        setProducts(
+          data.map((p: any) => ({
+            ...p,
+            category_name: p.categories?.name || "Others",
+          }))
+        );
+      }
+
+      setLoading(false);
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Toggle product active status
+  const toggleAvailability = async (
+    productId: string,
+    currentStatus: boolean
+  ) => {
+    setUpdating(productId);
+
+    const { error } = await supabase
+      .from("products")
+      .update({ is_active: !currentStatus })
+      .eq("id", productId);
+
+    if (error) {
+      console.error("Error updating product:", error);
+      alert("Failed to update product status");
+    } else {
+      // Update local state
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === productId ? { ...p, is_active: !currentStatus } : p
+        )
+      );
+    }
+
+    setUpdating(null);
   };
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const activeCount = products.filter((p) => p.is_active).length;
+  const inactiveCount = products.filter((p) => !p.is_active).length;
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2Icon className="size-8 animate-spin mx-auto text-primary" />
+        <p className="text-muted mt-2">Loading products...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Manajemen Produk</h1>
+          <h1 className="text-2xl font-bold">Product Management</h1>
           <p className="text-muted text-sm">
             {isAdminPusat
-              ? "Dashboard Pusat: Kelola katalog produk global."
-              : `Dashboard Cabang: Kelola ketersediaan produk di ${currentBranch?.name}.`}
+              ? "Headquarters Dashboard: Manage global product catalog."
+              : `Branch Dashboard: Manage product availability at ${currentBranch?.name}.`}
           </p>
+          <div className="flex gap-3 mt-2">
+            <Badge variant="success">{activeCount} Active</Badge>
+            <Badge variant="secondary">{inactiveCount} Inactive</Badge>
+          </div>
         </div>
 
         {/* Only Admin Pusat can add products */}
         {isAdminPusat && (
           <Button className="gap-2">
-            <PlusIcon className="size-4" /> Upload Produk Baru
+            <PlusIcon className="size-4" /> Upload New Product
           </Button>
         )}
       </div>
@@ -74,7 +134,7 @@ export default function ProductManagementPage() {
         <div className="relative flex-1">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted" />
           <Input
-            placeholder="Cari produk..."
+            placeholder="Search products..."
             className="pl-9 border-none bg-transparent focus-visible:ring-0"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -84,10 +144,16 @@ export default function ProductManagementPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredProducts.map((product) => {
-          const isActive = branchAvailability[product.id] ?? false;
+          const isActive = product.is_active;
+          const isUpdating = updating === product.id;
 
           return (
-            <Card key={product.id} className="p-5 flex flex-col gap-4 group">
+            <Card
+              key={product.id}
+              className={`p-5 flex flex-col gap-4 group transition-opacity ${
+                !isActive ? "opacity-60" : ""
+              }`}
+            >
               <div className="flex items-start justify-between">
                 <div className="size-12 rounded-xl bg-secondary flex items-center justify-center">
                   <Package2Icon className="size-6 text-muted" />
@@ -116,35 +182,48 @@ export default function ProductManagementPage() {
 
               <div>
                 <p className="text-xs font-medium text-muted uppercase tracking-wider">
-                  {product.category}
+                  {product.category_name}
                 </p>
                 <h3 className="font-bold text-lg leading-tight mt-0.5">
                   {product.name}
                 </h3>
                 <p className="text-primary font-bold mt-1">
-                  Rp {product.price.toLocaleString()}
+                  Rp {product.base_price.toLocaleString()}
                 </p>
               </div>
 
               <div className="mt-auto pt-4 border-t border-secondary flex items-center justify-between">
                 <Badge variant={isActive ? "success" : "secondary"}>
-                  {isActive ? "Tersedia" : "Kosong"}
+                  {isActive ? "Active" : "Inactive"}
                 </Badge>
 
-                {/* Branch level control: toggle availability */}
+                {/* Toggle availability */}
                 <Button
                   size="sm"
                   variant={isActive ? "secondary" : "plain"}
-                  onClick={() => toggleAvailability(product.id)}
+                  onClick={() => toggleAvailability(product.id, isActive)}
+                  disabled={isUpdating}
                   className="gap-2 text-xs"
                 >
-                  <PowerIcon className="size-3" />
-                  {isActive ? "Nonaktifkan" : "Aktifkan"}
+                  {isUpdating ? (
+                    <Loader2Icon className="size-3 animate-spin" />
+                  ) : (
+                    <PowerIcon className="size-3" />
+                  )}
+                  {isActive ? "Deactivate" : "Activate"}
                 </Button>
               </div>
             </Card>
           );
         })}
+
+        {filteredProducts.length === 0 && (
+          <div className="col-span-full text-center py-12 text-muted">
+            {search
+              ? "No products match your search."
+              : "No products yet. Add new products to get started."}
+          </div>
+        )}
       </div>
     </div>
   );

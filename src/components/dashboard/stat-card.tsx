@@ -1,43 +1,54 @@
 "use client";
 
 import { Card, CardBody } from "@/components/selia/card";
-import { cn } from "@/lib/utils";
-import { TrendingUpIcon, TrendingDownIcon, type LucideIcon } from "lucide-react";
+import { IconBox } from "@/components/selia/icon-box";
+import { Badge } from "@/components/selia/badge";
+import { Heading } from "@/components/selia/stack";
+import { type LucideIcon } from "lucide-react";
 
 interface StatCardProps {
+  icon: LucideIcon;
   title: string;
   value: string;
   change: string;
-  trend: "up" | "down";
-  icon: LucideIcon;
+  changeType: "increase" | "decrease";
+  iconVariant?:
+    | "info-subtle"
+    | "warning-subtle"
+    | "success-subtle"
+    | "purple-subtle";
 }
 
-export function StatCard({ title, value, change, trend, icon: Icon }: StatCardProps) {
+export function StatCard({
+  icon: Icon,
+  title,
+  value,
+  change,
+  changeType,
+  iconVariant = "info-subtle",
+}: StatCardProps) {
   return (
     <Card>
-      <CardBody className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="text-sm text-muted">{title}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
-            <div className="flex items-center gap-1 mt-2">
-              {trend === "up" ? (
-                <TrendingUpIcon className="size-3.5 text-success" />
-              ) : (
-                <TrendingDownIcon className="size-3.5 text-danger" />
-              )}
-              <span className={cn(
-                "text-xs font-medium",
-                trend === "up" ? "text-success" : "text-danger"
-              )}>
-                {change}
-              </span>
-              <span className="text-xs text-muted">vs kemarin</span>
-            </div>
-          </div>
-          <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Icon className="size-5 text-primary" />
-          </div>
+      <CardBody>
+        <IconBox size="lg" variant={iconVariant} className="mb-4">
+          <Icon />
+        </IconBox>
+        <Heading size="sm" className="font-medium text-muted">
+          {title}
+        </Heading>
+        <p className="text-4xl font-semibold mt-2">{value}</p>
+        <div className="flex items-center gap-2 mt-2">
+          <Badge
+            variant={changeType === "increase" ? "success" : "danger"}
+            className="mt-2"
+          >
+            {change}
+          </Badge>
+          <span className="text-sm text-muted mt-2">
+            {changeType === "increase"
+              ? "Compared to last month"
+              : "Compared to last week"}
+          </span>
         </div>
       </CardBody>
     </Card>

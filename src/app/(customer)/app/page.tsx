@@ -27,21 +27,19 @@ export default function MobileHomePage() {
 
   return (
     <Page>
-      <Navbar title="🍽️ RestoApp" subtitle="Pesan makanan favoritmu" />
+      <Navbar title="🍽️ Zencode POS" subtitle="Order your favorite food" />
 
       <Block className="mt-4!">
         <div className="bg-linear-to-r from-primary to-blue-600 rounded-2xl p-6 text-white">
-          <h2 className="text-xl font-bold">Selamat Datang!</h2>
+          <h2 className="text-xl font-bold">Welcome!</h2>
           <p className="text-sm opacity-90 mt-1">
-            Nikmati diskon 20% untuk pesanan pertama
+            Enjoy 20% discount for your first order
           </p>
-          <Button className="mt-4 bg-white! text-primary!">
-            Klaim Sekarang
-          </Button>
+          <Button className="mt-4 bg-white! text-primary!">Claim Now</Button>
         </div>
       </Block>
 
-      <BlockTitle>📋 Menu Kami</BlockTitle>
+      <BlockTitle>📋 Our Menu</BlockTitle>
 
       <List strongIos outlineIos>
         {menuItems.map((item) => (
@@ -74,7 +72,7 @@ export default function MobileHomePage() {
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border safe-area-bottom">
         <Link href="/app/cart">
           <Button large className="w-full bg-primary!">
-            🛒 Lihat Keranjang ({totalItems} item)
+            🛒 View Cart ({totalItems} items)
           </Button>
         </Link>
       </div>

@@ -8,21 +8,36 @@ import Link from "next/link";
 
 export default function CustomerLoginPage() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signInWithGoogle, signInWithEmail } = useAuth();
+  const { signInWithGoogle, signInWithPassword, signUp } = useAuth();
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || !password) return;
+    if (isSignUp && !name) return;
 
     setIsSubmitting(true);
     try {
-      await signInWithEmail(email);
-      alert("Cek email Anda untuk tautan masuk (Magic Link)!");
-    } catch (error: unknown) {
+      if (isSignUp) {
+        await signUp(email, password, name);
+        alert(
+          "Registration successful! Please check your email for confirmation."
+        );
+        setIsSignUp(false);
+      } else {
+        await signInWithPassword(email, password);
+        // Successful login will be handled by AuthContext state change and redirects
+      }
+    } catch (error: any) {
       console.error(error);
-      alert("Gagal mengirim email login.");
+      alert(
+        error.message ||
+          (isSignUp ? "Failed to sign up." : "Invalid email or password.")
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -34,7 +49,7 @@ export default function CustomerLoginPage() {
       await signInWithGoogle();
     } catch (error: unknown) {
       console.error(error);
-      alert("Gagal masuk dengan Google.");
+      alert("Failed to sign in with Google.");
       setIsSubmitting(false);
     }
   };
@@ -44,8 +59,8 @@ export default function CustomerLoginPage() {
       {/* Hero Section */}
       <div className="relative h-[55vh] w-full overflow-hidden">
         <Image
-          src="/login-bg.png"
-          alt="Coffee Background"
+          src="/images/login-bg.png"
+          alt="Zencode Background"
           fill
           className="object-cover"
           priority
@@ -62,20 +77,20 @@ export default function CustomerLoginPage() {
           <div className="size-2 w-4 rounded-full bg-[#006241]" />
         </div>
 
-        <h1 className="text-xl font-bold text-[#006241] leading-tight mb-2">
-          Menikmati Kopi Kapanpun,
+        <h1 className="text-xl font-bold text-slate-800 leading-tight mb-2">
+          Experience Seamless
           <br />
-          Dimanapun
+          Zencode POS
         </h1>
         <p className="text-gray-500 text-xs leading-relaxed max-w-[280px]">
-          Bebas pilih cara pengambilan, bisa pick up di store atau dikirim
-          langsung ke tujuanmu
+          Professional Point of Sale Management System. Manage your business
+          with clarity.
         </p>
 
         {/* Language Selector Dummy */}
         <div className="mt-6 flex items-center justify-between w-32 px-3 py-1.5 border border-gray-200 rounded-full text-xs font-medium">
           <span className="flex items-center gap-2">
-            <span className="text-lg">🇮🇩</span> Indonesia
+            <span className="text-lg">🇺🇸</span> English
           </span>
           <span className="text-gray-400">▼</span>
         </div>
@@ -86,35 +101,66 @@ export default function CustomerLoginPage() {
         {!showEmailInput ? (
           <Button
             large
-            className="bg-[#006241]! rounded-full! h-14! font-bold"
+            className="bg-slate-800! rounded-full! h-14! font-bold"
             onClick={() => setShowEmailInput(true)}
           >
-            Masuk
+            Sign In with Email
           </Button>
         ) : (
-          <form onSubmit={handleEmailLogin} className="animate-logo-reveal">
+          <form onSubmit={handleAuth} className="animate-logo-reveal">
             <List strong inset className="m-0! mb-3!">
+              {isSignUp && (
+                <ListInput
+                  label="Full Name"
+                  type="text"
+                  placeholder="Your Name"
+                  value={name}
+                  onInput={(e) => setName(e.target.value)}
+                  className="h-14!"
+                />
+              )}
               <ListInput
                 label="Email"
                 type="email"
-                placeholder="email@anda.com"
+                placeholder="email@example.com"
                 value={email}
                 onInput={(e) => setEmail(e.target.value)}
+                className="h-14!"
+              />
+              <ListInput
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onInput={(e) => setPassword(e.target.value)}
                 className="h-14!"
               />
             </List>
             <Button
               large
-              className="bg-[#006241]! rounded-full! h-14! font-bold"
+              className="bg-slate-800! rounded-full! h-14! font-bold"
               type="submit"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <Preloader className="w-6 h-6" />
+              ) : isSignUp ? (
+                "Sign Up"
               ) : (
-                "Kirim Magic Link"
+                "Log In"
               )}
             </Button>
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                className="text-slate-600 text-sm font-medium"
+                onClick={() => setIsSignUp(!isSignUp)}
+              >
+                {isSignUp
+                  ? "Already have an account? Log In"
+                  : "Don't have an account? Sign Up"}
+              </button>
+            </div>
           </form>
         )}
 
@@ -131,22 +177,22 @@ export default function CustomerLoginPage() {
             width={20}
             height={20}
           />
-          Masuk dengan Google
+          Sign in with Google
         </Button>
 
         <div className="pt-4 text-center space-y-4">
           <Link
             href="/forgot-password"
-            className="text-gray-400 text-xs hover:text-[#006241]"
+            className="text-gray-400 text-xs hover:text-slate-800"
           >
-            Lupa Password?
+            Forgot Password?
           </Link>
           <div className="h-px bg-gray-100 w-1/2 mx-auto" />
           <Link
             href="/app"
-            className="block text-[#006241] text-xs font-bold tracking-wide"
+            className="block text-slate-800 text-xs font-bold tracking-wide"
           >
-            Lewati tahap ini
+            Skip this step
           </Link>
         </div>
       </div>

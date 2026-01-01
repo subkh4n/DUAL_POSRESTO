@@ -77,7 +77,7 @@ export default function CartPage() {
 
   const handleCheckout = async () => {
     if (!user) {
-      alert("Silakan login terlebih dahulu!");
+      alert("Please login first!");
       router.push("/login");
       return;
     }
@@ -124,13 +124,13 @@ export default function CartPage() {
         });
       }
 
-      alert("Pesanan berhasil dikirim!");
+      alert("Order placed successfully!");
       setCartItems([]);
       router.push("/app");
     } catch (error: unknown) {
       console.error(error);
       const message = error instanceof Error ? error.message : "Unknown error";
-      alert("Gagal melakukan checkout: " + message);
+      alert("Failed to checkout: " + message);
     } finally {
       setIsCheckingOut(false);
     }
@@ -139,18 +139,18 @@ export default function CartPage() {
   return (
     <Page>
       <Navbar
-        title="🛒 Keranjang"
+        title="🛒 Cart"
         left={
           <Link href="/app">
-            <NavbarBackLink text="Kembali" />
+            <NavbarBackLink text="Back" />
           </Link>
         }
       />
 
       <Block className="mt-4!">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Pesanan Anda</h2>
-          <Badge variant="secondary">{cartItems.length} item</Badge>
+          <h2 className="text-lg font-semibold">Your Order</h2>
+          <Badge variant="secondary">{cartItems.length} items</Badge>
         </div>
       </Block>
 
@@ -178,7 +178,7 @@ export default function CartPage() {
             }
             after={
               <div className="flex items-center gap-3">
-                <span className="font-bold text-[#006241]">
+                <span className="font-bold text-slate-800">
                   Rp {(item.price * item.quantity).toLocaleString()}
                 </span>
                 <button
@@ -195,9 +195,9 @@ export default function CartPage() {
 
       {cartItems.length === 0 && (
         <Block className="text-center py-12">
-          <p className="text-gray-400 text-lg">Keranjang kosong</p>
+          <p className="text-gray-400 text-lg">Cart is empty</p>
           <Link href="/app">
-            <Button className="mt-4 bg-[#006241]!">Lihat Menu</Button>
+            <Button className="mt-4 bg-slate-800!">View Menu</Button>
           </Link>
         </Block>
       )}
@@ -210,27 +210,23 @@ export default function CartPage() {
               <span>Rp {subtotal.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between text-sm text-gray-500">
-              <span>Pajak (10%)</span>
+              <span>Tax (10%)</span>
               <span>Rp {tax.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-gray-50 border-dashed">
               <span className="font-medium">Total</span>
-              <span className="text-xl font-bold text-[#006241]">
+              <span className="text-xl font-bold text-slate-800">
                 Rp {total.toLocaleString()}
               </span>
             </div>
           </div>
           <Button
             size="lg"
-            className="w-full bg-[#006241]! text-white! rounded-2xl! flex items-center justify-center gap-2"
+            className="w-full bg-slate-800! text-white! rounded-2xl! flex items-center justify-center gap-2"
             onClick={handleCheckout}
             disabled={isCheckingOut}
           >
-            {isCheckingOut ? (
-              <Preloader className="w-5 h-5" />
-            ) : (
-              "Checkout Sekarang"
-            )}
+            {isCheckingOut ? <Preloader className="w-5 h-5" /> : "Checkout Now"}
           </Button>
         </div>
       )}

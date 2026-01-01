@@ -81,10 +81,11 @@ export default function POSPage() {
     const fetchData = async () => {
       setLoading(true);
 
-      // Fetch products with category
+      // Fetch products with category - ONLY ACTIVE products for POS
       const { data: productsData } = await supabase
         .from("products")
-        .select("*, categories(name)");
+        .select("*, categories(name)")
+        .eq("is_active", true);
 
       // Fetch modifier groups
       const { data: groupsData } = await supabase
@@ -107,7 +108,7 @@ export default function POSPage() {
         setProducts(
           productsData.map((p: any) => ({
             ...p,
-            category_name: p.categories?.name || "Lainnya",
+            category_name: p.categories?.name || "Others",
           }))
         );
       }
@@ -268,7 +269,7 @@ export default function POSPage() {
   );
 
   if (loading) {
-    return <div className="p-8 text-center text-muted">Memuat data...</div>;
+    return <div className="p-8 text-center text-muted">Loading data...</div>;
   }
 
   return (
@@ -276,8 +277,8 @@ export default function POSPage() {
       {/* Page Title */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Kasir (POS)</h2>
-          <p className="text-muted">Point of Sale - Kelola pesanan pelanggan</p>
+          <h2 className="text-2xl font-bold tracking-tight">POS Cashier</h2>
+          <p className="text-muted">Point of Sale - Manage customer orders</p>
         </div>
       </div>
 
@@ -288,7 +289,7 @@ export default function POSPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <SearchIcon className="size-5" />
-                Menu Produk
+                Product Menu
               </CardTitle>
             </CardHeader>
             <CardBody>
@@ -310,7 +311,7 @@ export default function POSPage() {
                 ))}
                 {products.length === 0 && (
                   <p className="col-span-full text-center text-muted py-8">
-                    Belum ada produk. Tambah produk di menu Produk.
+                    No products yet. Add products in the Product menu.
                   </p>
                 )}
               </div>
@@ -323,13 +324,13 @@ export default function POSPage() {
           <Card className="sticky top-24">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                Keranjang
+                Cart
                 <Badge>{cart.length} item</Badge>
               </CardTitle>
             </CardHeader>
             <CardBody className="space-y-4">
               {cart.length === 0 ? (
-                <p className="text-center text-muted py-8">Keranjang kosong</p>
+                <p className="text-center text-muted py-8">Cart empty</p>
               ) : (
                 <>
                   {cart.map((item) => (
@@ -379,7 +380,7 @@ export default function POSPage() {
                       </span>
                     </div>
                     <Button block size="lg">
-                      Proses Pesanan
+                      Process Order
                     </Button>
                   </div>
                 </>
@@ -415,7 +416,7 @@ export default function POSPage() {
                     <h4 className="font-semibold">{group.name}</h4>
                     {group.required && (
                       <Badge variant="danger" size="sm">
-                        Wajib
+                        Required
                       </Badge>
                     )}
                     {group.type === "MULTIPLE" && (
@@ -470,7 +471,7 @@ export default function POSPage() {
                 </span>
               </div>
               <Button block size="lg" onClick={confirmModifiers}>
-                Tambah ke Keranjang
+                Add to Cart
               </Button>
             </div>
           </div>

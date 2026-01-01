@@ -99,7 +99,7 @@ export default function ModifiersPage() {
   // Group CRUD
   const saveGroup = async () => {
     if (!groupForm.id || !groupForm.name) {
-      alert("ID dan Nama wajib diisi!");
+      alert("ID and Name are required!");
       return;
     }
 
@@ -139,7 +139,7 @@ export default function ModifiersPage() {
   };
 
   const deleteGroup = async (id: string) => {
-    if (!confirm("Hapus grup ini beserta semua item-nya?")) return;
+    if (!confirm("Delete this group and all its items?")) return;
     await supabase.from("modifier_groups").delete().eq("id", id);
     refetchData();
   };
@@ -160,7 +160,7 @@ export default function ModifiersPage() {
   // Item CRUD
   const saveItem = async (groupId: string) => {
     if (!itemForm.id || !itemForm.name) {
-      alert("ID dan Nama wajib diisi!");
+      alert("ID and Name are required!");
       return;
     }
 
@@ -178,7 +178,7 @@ export default function ModifiersPage() {
   };
 
   const deleteItem = async (id: string) => {
-    if (!confirm("Hapus item ini?")) return;
+    if (!confirm("Delete this item?")) return;
     await supabase.from("modifier_items").delete().eq("id", id);
     refetchData();
   };
@@ -192,16 +192,18 @@ export default function ModifiersPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-muted">Memuat data...</div>;
+    return <div className="p-8 text-center text-muted">Loading data...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Kelola Modifier</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Manage Modifiers
+          </h1>
           <p className="text-muted">
-            Atur grup modifier (Topping, Size, Level) dan item-nya
+            Configure modifier groups (Topping, Size, Level) and their items
           </p>
         </div>
         <Button
@@ -219,7 +221,7 @@ export default function ModifiersPage() {
           }}
         >
           <PlusIcon className="size-4" />
-          Tambah Grup
+          Add Group
         </Button>
       </div>
 
@@ -228,14 +230,14 @@ export default function ModifiersPage() {
         <Card className="border-primary">
           <CardHeader>
             <CardTitle>
-              {editingGroup ? "Edit Grup" : "Tambah Grup Baru"}
+              {editingGroup ? "Edit Group" : "Add New Group"}
             </CardTitle>
           </CardHeader>
           <CardBody className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-1 block">
-                  ID (unik)
+                  ID (unique)
                 </label>
                 <Input
                   placeholder="grp-topping"
@@ -247,7 +249,7 @@ export default function ModifiersPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Nama</label>
+                <label className="text-sm font-medium mb-1 block">Name</label>
                 <Input
                   placeholder="Pilih Topping"
                   value={groupForm.name}
@@ -259,7 +261,7 @@ export default function ModifiersPage() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium mb-1 block">Tipe</label>
+                <label className="text-sm font-medium mb-1 block">Type</label>
                 <select
                   className="w-full p-2 border rounded-lg"
                   value={groupForm.type}
@@ -270,13 +272,13 @@ export default function ModifiersPage() {
                     })
                   }
                 >
-                  <option value="SINGLE">Single (1 pilihan)</option>
-                  <option value="MULTIPLE">Multiple (banyak)</option>
+                  <option value="SINGLE">Single (1 choice)</option>
+                  <option value="MULTIPLE">Multiple (many)</option>
                 </select>
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">
-                  Min Pilih
+                  Min Select
                 </label>
                 <Input
                   type="number"
@@ -291,7 +293,7 @@ export default function ModifiersPage() {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">
-                  Max Pilih
+                  Max Select
                 </label>
                 <Input
                   type="number"
@@ -315,13 +317,13 @@ export default function ModifiersPage() {
                 }
               />
               <label htmlFor="required" className="text-sm">
-                Wajib dipilih
+                Required
               </label>
             </div>
             <div className="flex gap-2">
               <Button onClick={saveGroup}>
                 <SaveIcon className="size-4" />
-                Simpan
+                Save
               </Button>
               <Button
                 variant="outline"
@@ -330,7 +332,7 @@ export default function ModifiersPage() {
                   setEditingGroup(null);
                 }}
               >
-                Batal
+                Cancel
               </Button>
             </div>
           </CardBody>
@@ -367,7 +369,7 @@ export default function ModifiersPage() {
                   >
                     {group.type}
                   </Badge>
-                  {group.required && <Badge variant="danger">Wajib</Badge>}
+                  {group.required && <Badge variant="danger">Required</Badge>}
                   <Badge variant="secondary">
                     {items.filter((i) => i.group_id === group.id).length} item
                   </Badge>
@@ -424,7 +426,7 @@ export default function ModifiersPage() {
                           <span className="text-sm text-primary font-medium">
                             {item.price_adjust > 0
                               ? `+Rp ${item.price_adjust.toLocaleString()}`
-                              : "Gratis"}
+                              : "Free"}
                           </span>
                           <button
                             onClick={() => deleteItem(item.id)}
@@ -447,7 +449,7 @@ export default function ModifiersPage() {
                           }
                         />
                         <Input
-                          placeholder="Nama Item"
+                          placeholder="Item Name"
                           value={itemForm.name}
                           onChange={(e) =>
                             setItemForm({ ...itemForm, name: e.target.value })
@@ -455,7 +457,7 @@ export default function ModifiersPage() {
                         />
                         <Input
                           type="number"
-                          placeholder="Tambah Harga"
+                          placeholder="Price Add"
                           value={itemForm.price_adjust}
                           onChange={(e) =>
                             setItemForm({
@@ -467,14 +469,14 @@ export default function ModifiersPage() {
                       </div>
                       <div className="flex gap-2">
                         <Button size="sm" onClick={() => saveItem(group.id)}>
-                          <SaveIcon className="size-3" /> Simpan
+                          <SaveIcon className="size-3" /> Save
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => setShowItemForm(null)}
                         >
-                          Batal
+                          Cancel
                         </Button>
                       </div>
                     </div>
@@ -487,7 +489,7 @@ export default function ModifiersPage() {
                       className="w-full p-3 border border-dashed rounded-lg text-muted hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
                     >
                       <PlusIcon className="size-4" />
-                      Tambah Item
+                      Add Item
                     </button>
                   )}
                 </div>
@@ -499,8 +501,7 @@ export default function ModifiersPage() {
         {groups.length === 0 && (
           <Card>
             <CardBody className="text-center py-12 text-muted">
-              Belum ada grup modifier. Klik &quot;Tambah Grup&quot; untuk
-              memulai.
+              No modifier groups yet. Click &quot;Add Group&quot; to start.
             </CardBody>
           </Card>
         )}

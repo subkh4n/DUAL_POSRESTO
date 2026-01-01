@@ -15,7 +15,7 @@ export default function ResetPasswordPage() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password || password !== confirmPassword) {
-      alert("Password tidak cocok atau kosong!");
+      alert("Passwords do not match or are empty!");
       return;
     }
 
@@ -28,7 +28,7 @@ export default function ResetPasswordPage() {
     } catch (error: unknown) {
       console.error(error);
       const message = error instanceof Error ? error.message : "Unknown error";
-      alert("Gagal update password: " + message);
+      alert("Failed to update password: " + message);
     } finally {
       setIsSubmitting(false);
     }
@@ -36,10 +36,10 @@ export default function ResetPasswordPage() {
 
   return (
     <Page className="bg-white">
-      <div className="bg-[#006241] h-[30vh] flex flex-col items-center justify-center p-6 text-center">
-        <h2 className="text-white text-2xl font-bold mb-2">Password Baru</h2>
+      <div className="bg-slate-800 h-[30vh] flex flex-col items-center justify-center p-6 text-center">
+        <h2 className="text-white text-2xl font-bold mb-2">New Password</h2>
         <p className="text-white/70 text-sm">
-          Silakan masukkan password baru Anda yang kuat.
+          Please enter your strong new password.
         </p>
       </div>
 
@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
           <form onSubmit={handleUpdate} className="space-y-6">
             <List strong inset className="m-0!">
               <ListInput
-                label="Password Baru"
+                label="New Password"
                 type="password"
                 placeholder="******"
                 value={password}
@@ -56,7 +56,7 @@ export default function ResetPasswordPage() {
                 className="h-16!"
               />
               <ListInput
-                label="Konfirmasi Password"
+                label="Confirm Password"
                 type="password"
                 placeholder="******"
                 value={confirmPassword}
@@ -67,7 +67,7 @@ export default function ResetPasswordPage() {
 
             <Button
               large
-              className="bg-[#006241]! rounded-full! h-14! font-bold"
+              className="bg-slate-800! rounded-full! h-14! font-bold"
               type="submit"
               disabled={isSubmitting}
             >
@@ -95,9 +95,9 @@ export default function ResetPasswordPage() {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-800">Berhasil!</h3>
+            <h3 className="text-xl font-bold text-gray-800">Success!</h3>
             <p className="text-gray-500 text-sm">
-              Password Anda sudah diperbarui. Mengalihkan ke halaman login...
+              Your password has been updated. Redirecting to login page...
             </p>
           </div>
         )}

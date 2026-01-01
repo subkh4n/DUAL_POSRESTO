@@ -1,6 +1,6 @@
 # POS RESTO - Database Schema & Relations
 
-> **Update Terakhir**: 31 Desember 2024
+> **Update Terakhir**: 1 Januari 2026
 
 Dokumentasi lengkap struktur data untuk sistem POS Multi-Branch dengan Modifier, Voucher, dan Loyalty.
 
@@ -43,15 +43,25 @@ erDiagram
 | address   | TEXT    | Alamat       |
 | is_active | BOOLEAN | Status aktif |
 
-### users
+### User Roles
 
-| Column    | Type    | Description                                |
-| --------- | ------- | ------------------------------------------ |
-| id        | UUID PK |                                            |
-| phone     | TEXT UK | Nomor telepon                              |
-| name      | TEXT    | Nama lengkap                               |
-| role      | TEXT    | ADMIN_PUSAT, BRANCH_ADMIN, KASIR, CUSTOMER |
-| branch_id | UUID FK | Cabang (null untuk ADMIN_PUSAT)            |
+| Role       | Access            | Description                                      |
+| ---------- | ----------------- | ------------------------------------------------ |
+| superadmin | Full system       | All features, headquarters settings, global data |
+| admin      | Branch management | Manage branch-specific data, products, vouchers  |
+| cashier    | POS only          | Point of sale operations for a specific branch   |
+| customer   | Mobile app        | Browse menu, order, view points/vouchers         |
+
+### users table
+
+| Column    | Type    | Description                          |
+| --------- | ------- | ------------------------------------ |
+| id        | UUID PK |                                      |
+| email     | TEXT UK | Alamat email (unique)                |
+| name      | TEXT    | Nama lengkap                         |
+| role      | TEXT    | superadmin, admin, cashier, customer |
+| branch_id | UUID FK | Cabang (null untuk superadmin)       |
+| phone     | TEXT    | Nomor telepon                        |
 
 ### products
 
@@ -173,8 +183,53 @@ erDiagram
 
 ---
 
+---
+
+## Role-Based Authentication Implementation Details
+
+### 1. AuthContext Synchronization
+
+- **UserRole Type**: Updated to `"superadmin" | "admin" | "cashier" | "customer"`.
+- **Authentication**: Supports `signInWithPassword` for staff and `signUp` for mobile customers.
+- **Access Helpers**: `isSuperAdmin`, `isAdmin`, `isCashier`, `isCustomer`, `canAccessDashboard`.
+
+### 2. Login Logic
+
+- **Desktop Dashboard**: Redirects staff to `/admin`.
+- **Mobile App**: Redirects customers to `/app`.
+
+### 3. Database Role Mapping
+
+Roles are stored in `public.users` linked by `id` to `auth.users`. RLS policies use these roles to enforce security.
+
+---
+
+## Zencode Rebranding
+
+As of January 2026, the application has been rebranded as **Zencode** (Professional Software House).
+
+### Changes:
+
+- **Branding**: All logos and text references updated to Zencode.
+- **Numbers**: Standardized to IDR format (e.g., `1.000.000`).
+- **Language**: All UI text translated to English.
+- **PWA**: Configured as a standalone web app with Zencode identity.
+
+### Desktop Login:
+
+- Minimalist design with a two-column layout.
+- Email and Password authentication only.
+- Redirects to `/admin` upon successful login for authorized roles.
+
+### Mobile App:
+
+- Retains mobile-first design with Konsta UI.
+- Supports Login and Sign Up.
+- Retains Google OAuth for ease of use.
+
+---
+
 ## Referensi SQL
 
-File lengkap: `docs/supabase_migration.sql`
-
-Jalankan di **Supabase SQL Editor** untuk membuat semua tabel, index, RLS policies, dan triggers.
+- `docs/supabase_migration.sql`: Schema dasar.
+- `docs/sql/create_test_users.sql`: Setup user roles dan test accounts.

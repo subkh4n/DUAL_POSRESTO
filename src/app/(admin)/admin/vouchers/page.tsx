@@ -46,13 +46,13 @@ export default function VoucherManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Manajemen Voucher</h1>
+          <h1 className="text-2xl font-bold">Voucher Management</h1>
           <p className="text-muted text-sm">
-            Kelola promo dan diskon untuk cabang {currentBranch?.name}
+            Manage promos and discounts for branch {currentBranch?.name}
           </p>
         </div>
         <Button className="gap-2">
-          <PlusIcon className="size-4" /> Tambah Voucher
+          <PlusIcon className="size-4" /> Add Voucher
         </Button>
       </div>
 
@@ -96,7 +96,7 @@ export default function VoucherManagementPage() {
                     : `Rp ${voucher.value.toLocaleString()}`}
                 </p>
                 <p className="text-xs text-muted mt-1">
-                  Berlaku di {currentBranch?.name}
+                  Valid at {currentBranch?.name}
                 </p>
               </div>
               <Badge
@@ -112,10 +112,10 @@ export default function VoucherManagementPage() {
           <div className="col-span-full py-12 text-center bg-white rounded-3xl border-2 border-dashed border-border">
             <TicketIcon className="size-12 text-muted mx-auto mb-4 opacity-20" />
             <h3 className="text-lg font-medium text-muted">
-              Belum ada voucher aktif
+              No active vouchers
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Buat voucher pertama Anda untuk meningkatkan penjualan!
+              Create your first voucher to boost sales!
             </p>
           </div>
         )}

@@ -51,3 +51,20 @@
 - [x] Documentation & Data
   - [x] Update all .md files with current project state
   - [x] Create `dummy_data.sql` for sample products
+  - [x] Create `docs/DASHBOARD_UI_IMPLEMENTATION.md`
+  - [x] Create `docs/HYBRID_MONOLITH.md`
+  - [x] Sync Brain Artifacts to Public Docs
+- [x] Rebranding & Internationalization
+  - [x] Rebrand application to "Zencode"
+  - [x] Update logos and manifest for Zencode
+  - [x] Standardize number formatting to IDR
+  - [x] Translate all UI text to English
+- [x] PWA Implementation
+  - [x] Configure manifest.json for Zencode
+  - [x] Implement Service Worker with caching
+  - [x] Add PWA meta tags and icons
+- [x] Role-Based Authentication (RBAC)
+  - [x] Update AuthContext with 4 user roles
+  - [x] Implement Email/Password login for desktop
+  - [x] Implement Sign Up functionality for mobile
+  - [x] Create test users and SQL scripts for roles

@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
     } catch (error: unknown) {
       console.error(error);
       const message = error instanceof Error ? error.message : "Unknown error";
-      alert("Gagal mengirim link reset: " + message);
+      alert("Failed to send reset link: " + message);
     } finally {
       setIsSubmitting(false);
     }
@@ -39,11 +39,10 @@ export default function ForgotPasswordPage() {
 
   return (
     <Page className="bg-white">
-      <div className="bg-[#006241] h-[30vh] flex flex-col items-center justify-center p-6 text-center">
-        <h2 className="text-white text-2xl font-bold mb-2">Lupa Password?</h2>
+      <div className="bg-slate-800 h-[30vh] flex flex-col items-center justify-center p-6 text-center">
+        <h2 className="text-white text-2xl font-bold mb-2">Forgot Password?</h2>
         <p className="text-white/70 text-sm">
-          Jangan khawatir, kami akan mengirimkan link untuk mereset password
-          Anda.
+          No worries, we will send you a link to reset your password.
         </p>
       </div>
 
@@ -52,9 +51,9 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleReset} className="space-y-6">
             <List strong inset className="m-0!">
               <ListInput
-                label="Email Terdaftar"
+                label="Registered Email"
                 type="email"
-                placeholder="nama@email.com"
+                placeholder="name@email.com"
                 value={email}
                 onInput={(e) => setEmail(e.target.value)}
                 className="h-16!"
@@ -63,20 +62,20 @@ export default function ForgotPasswordPage() {
 
             <Button
               size="lg"
-              className="bg-[#006241]! rounded-full! h-14! font-bold w-full"
+              className="bg-slate-800! rounded-full! h-14! font-bold w-full"
               type="submit"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <Preloader className="w-6 h-6" />
               ) : (
-                "Kirim Link Reset"
+                "Send Reset Link"
               )}
             </Button>
 
             <div className="text-center">
               <Link href="/login" className="text-gray-400 text-sm font-medium">
-                Kembali ke halaman login
+                Back to login page
               </Link>
             </div>
           </form>
@@ -98,12 +97,10 @@ export default function ForgotPasswordPage() {
               </svg>
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-gray-800">
-                Email Terkirim!
-              </h3>
+              <h3 className="text-xl font-bold text-gray-800">Email Sent!</h3>
               <p className="text-gray-500 text-sm">
-                Silakan cek kotak masuk email <strong>{email}</strong> Anda dan
-                ikuti instruksi yang ada.
+                Please check your email inbox for <strong>{email}</strong> and
+                follow the instructions.
               </p>
             </div>
             <div className="pt-4">
@@ -111,9 +108,9 @@ export default function ForgotPasswordPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-[#006241]! text-[#006241]! rounded-full! h-14! font-bold w-full"
+                  className="border-slate-800! text-slate-800! rounded-full! h-14! font-bold w-full"
                 >
-                  Kembali ke Login
+                  Back to Login
                 </Button>
               </Link>
             </div>

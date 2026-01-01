@@ -14,9 +14,14 @@ import {
   SidebarItemButton,
   SidebarGroup,
   SidebarGroupTitle,
+  SidebarCollapsible,
+  SidebarCollapsibleTrigger,
+  SidebarCollapsiblePanel,
+  SidebarSubmenu,
 } from "@/components/selia/sidebar";
 import { Avatar } from "@/components/selia/avatar";
 import { Badge } from "@/components/selia/badge";
+import { Input } from "@/components/selia/input";
 import { Separator } from "@/components/selia/separator";
 import {
   HomeIcon,
@@ -25,42 +30,65 @@ import {
   UsersIcon,
   SettingsIcon,
   LogOutIcon,
-  ChefHatIcon,
   BarChart3Icon,
   TicketIcon,
   MailIcon,
+  SearchIcon,
 } from "lucide-react";
 
 const menuItems = [
   { href: "/admin", label: "Dashboard", icon: HomeIcon },
-  { href: "/admin/pos", label: "Kasir (POS)", icon: ShoppingBagIcon },
-  { href: "/admin/vouchers", label: "Voucher & Promo", icon: TicketIcon },
-  { href: "/admin/products", label: "Produk", icon: Package2Icon },
-  { href: "/admin/modifiers", label: "Modifier", icon: SettingsIcon },
-  { href: "/admin/customers", label: "Pelanggan", icon: UsersIcon },
-  { href: "/admin/reports", label: "Laporan", icon: BarChart3Icon },
+  { href: "/admin/pos", label: "Point of Sale", icon: ShoppingBagIcon },
+  { href: "/admin/vouchers", label: "Vouchers & Promo", icon: TicketIcon },
+  { href: "/admin/products", label: "Products", icon: Package2Icon },
+  { href: "/admin/modifiers", label: "Modifiers", icon: SettingsIcon },
+  { href: "/admin/customers", label: "Customers", icon: UsersIcon },
+];
+
+// Reports submenu items
+const reportItems = [
+  { href: "/admin/reports/sales", label: "Sales" },
+  { href: "/admin/reports/traffic", label: "Traffic" },
+  { href: "/admin/reports/conversion", label: "Conversion" },
 ];
 
 const settingsItems = [
-  { href: "/admin/email-logs", label: "Monitoring Email", icon: MailIcon },
-  { href: "/admin/settings", label: "Pengaturan", icon: SettingsIcon },
+  { href: "/admin/email-logs", label: "Email Monitoring", icon: MailIcon },
+  { href: "/admin/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar className="w-64 h-screen bg-background border-r border-border">
+    <Sidebar
+      size="loose"
+      className="w-64 h-screen bg-background border-r border-border"
+    >
       <SidebarHeader>
         <SidebarLogo className="flex items-center gap-3">
-          <div className="size-9 rounded-lg bg-primary flex items-center justify-center">
-            <ChefHatIcon className="size-5 text-primary-foreground" />
-          </div>
+          <img
+            src="/icons/logo.png"
+            alt="Zencode"
+            className="size-9 rounded-lg"
+          />
           <div>
-            <span className="font-bold text-lg">RestoApp</span>
-            <p className="text-xs text-muted">Restaurant Management</p>
+            <span className="font-bold text-lg">Zencode</span>
+            <p className="text-xs text-muted">Professional Software House</p>
           </div>
         </SidebarLogo>
+
+        {/* Search Box */}
+        <div className="relative mt-4">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted" />
+          <Input
+            placeholder="Search..."
+            className="pl-9 pr-10 h-10 bg-secondary/50 border-border"
+          />
+          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted opacity-100">
+            /
+          </kbd>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
@@ -87,6 +115,39 @@ export function AppSidebar() {
                   </SidebarItem>
                 );
               })}
+
+              {/* Reports with Collapsible Submenu */}
+              <SidebarCollapsible defaultOpen>
+                <SidebarCollapsibleTrigger
+                  render={
+                    <SidebarItemButton
+                      active={pathname.startsWith("/admin/reports")}
+                    >
+                      <BarChart3Icon className="size-4" />
+                      <span className="flex-1">Reports</span>
+                    </SidebarItemButton>
+                  }
+                />
+                <SidebarCollapsiblePanel>
+                  <SidebarSubmenu>
+                    <SidebarList>
+                      {reportItems.map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                          <SidebarItem key={item.href}>
+                            <SidebarItemButton
+                              active={isActive}
+                              render={<Link href={item.href} />}
+                            >
+                              {item.label}
+                            </SidebarItemButton>
+                          </SidebarItem>
+                        );
+                      })}
+                    </SidebarList>
+                  </SidebarSubmenu>
+                </SidebarCollapsiblePanel>
+              </SidebarCollapsible>
             </SidebarList>
           </SidebarGroup>
 
