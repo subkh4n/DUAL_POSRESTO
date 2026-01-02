@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import {
   Sidebar,
   SidebarHeader,
@@ -59,6 +61,13 @@ const settingsItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout, user } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/desktop-login");
+  };
 
   return (
     <Sidebar
@@ -67,10 +76,12 @@ export function AppSidebar() {
     >
       <SidebarHeader>
         <SidebarLogo className="flex items-center gap-3">
-          <img
+          <Image
             src="/icons/logo.png"
             alt="Zencode"
-            className="size-9 rounded-lg"
+            width={36}
+            height={36}
+            className="rounded-lg"
           />
           <div>
             <span className="font-bold text-lg">Zencode</span>
@@ -178,13 +189,23 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-border">
         <div className="flex items-center gap-3 p-4">
           <Avatar size="sm">
-            <span className="text-sm font-medium">A</span>
+            <span className="text-sm font-medium">
+              {user?.name?.charAt(0).toUpperCase() || "U"}
+            </span>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Admin User</p>
-            <p className="text-xs text-muted truncate">admin@resto.com</p>
+            <p className="text-sm font-medium truncate">
+              {user?.name || "User"}
+            </p>
+            <p className="text-xs text-muted truncate">
+              {user?.email || "No email"}
+            </p>
           </div>
-          <button className="p-2 rounded-lg hover:bg-secondary transition-colors">
+          <button
+            onClick={handleLogout}
+            className="p-2 rounded-lg hover:bg-secondary transition-colors"
+            title="Logout"
+          >
             <LogOutIcon className="size-4 text-muted" />
           </button>
         </div>

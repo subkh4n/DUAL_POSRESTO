@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export interface Branch {
   id: string;
@@ -21,42 +22,54 @@ const BranchContext = createContext<BranchContextType | undefined>(undefined);
 
 export function BranchProvider({ children }: { children: React.ReactNode }) {
   const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Mock branches for now - in a real app, fetch from Supabase
-  const branches: Branch[] = [
-    {
-      id: "branch-a",
-      name: "Toko Pusat (A)",
-      address: "Jl. Sudirman No. 1",
-      latitude: -6.2088,
-      longitude: 106.8456,
-    },
-    {
-      id: "branch-b",
-      name: "Cabang Mal (B)",
-      address: "Mal Grand Indonesia, Lt. LG",
-      latitude: -6.1953,
-      longitude: 106.8231,
-    },
-  ];
-
+  // Fetch branches from Supabase on mount
   useEffect(() => {
-    const savedBranch = localStorage.getItem("resto_selected_branch");
-    if (savedBranch) {
-      try {
-        const parsed = JSON.parse(savedBranch);
-        setCurrentBranch(parsed);
-      } catch (e) {
-        console.error("Failed to parse saved branch", e);
+    const fetchBranches = async () => {
+      const { data, error } = await supabase
+        .from("branches")
+        .select("id, name, address, latitude, longitude")
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) {
+        console.error("Error fetching branches:", error);
+        // Fallback to empty array
+        setBranches([]);
+      } else if (data && data.length > 0) {
+        setBranches(data);
+
+        // Try to restore saved branch from localStorage
+        const savedBranch = localStorage.getItem("resto_selected_branch");
+        if (savedBranch) {
+          try {
+            const parsed = JSON.parse(savedBranch);
+            // Verify the saved branch still exists in fetched data
+            const stillExists = data.find((b) => b.id === parsed.id);
+            if (stillExists) {
+              setCurrentBranch(stillExists);
+            } else {
+              setCurrentBranch(data[0]);
+            }
+          } catch (e) {
+            console.error("Failed to parse saved branch", e);
+            setCurrentBranch(data[0]);
+          }
+        } else {
+          // Default to first branch
+          setCurrentBranch(data[0]);
+        }
       }
-    } else if (branches.length > 0) {
-      // Default to first branch if none saved
-      setCurrentBranch(branches[0]);
-    }
-    setIsLoaded(true);
+
+      setIsLoaded(true);
+    };
+
+    fetchBranches();
   }, []);
 
+  // Save selected branch to localStorage
   useEffect(() => {
     if (isLoaded && currentBranch) {
       localStorage.setItem(

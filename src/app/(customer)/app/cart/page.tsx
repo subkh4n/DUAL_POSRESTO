@@ -13,67 +13,23 @@ import { Button } from "@/components/selia/button";
 import { Badge } from "@/components/selia/badge";
 import Link from "next/link";
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, MinusIcon, PlusIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext";
 import { supabase } from "@/lib/supabase";
 import { sendOrderSuccessEmail } from "@/lib/email";
 import { useRouter } from "next/navigation";
 
-interface CartItem {
-  id: string | number;
-  name: string;
-  price: number;
-  quantity: number;
-  product_id?: string;
-}
-
-const initialCart: CartItem[] = [
-  {
-    id: 1,
-    name: "Nasi Goreng Spesial",
-    price: 25000,
-    quantity: 2,
-    product_id: "71e5a52d-8e5f-4d6d-9d6a-5c2b5c4d3e1a",
-  },
-  {
-    id: 2,
-    name: "Es Teh Manis",
-    price: 5000,
-    quantity: 1,
-    product_id: "82f6b63e-9f6g-5e7h-0e7b-6d3c6d5e4f2b",
-  },
-];
-
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>(initialCart);
+  const { cart, removeFromCart, updateQuantity, totalPrice, clearCart } =
+    useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
 
-  const handleDelete = (id: string | number) => {
-    setCartItems(cartItems.filter((item) => item.id !== id));
-  };
-
-  const updateQuantity = (id: string | number, delta: number) => {
-    setCartItems(
-      cartItems
-        .map((item) => {
-          if (item.id === id) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : item;
-          }
-          return item;
-        })
-        .filter((item) => item.quantity > 0)
-    );
-  };
-
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
+  const subtotal = totalPrice;
+  const tax = Math.round(subtotal * 0.1);
+  const finalTotal = subtotal + tax;
 
   const handleCheckout = async () => {
     if (!user) {
@@ -82,6 +38,8 @@ export default function CartPage() {
       return;
     }
 
+    if (cart.length === 0) return;
+
     setIsCheckingOut(true);
     try {
       // 1. Insert into transactions
@@ -89,12 +47,12 @@ export default function CartPage() {
         .from("transactions")
         .insert({
           customer_id: user.id !== "legacy" ? user.id : null,
-          branch_id: user.branchId || "1e2d3c4b-5a6b-7c8d-9e0f-1a2b3c4d5e6f", // Placeholder branch
+          branch_id: user.branchId || "1e2d3c4b-5a6b-7c8d-9e0f-1a2b3c4d5e6f", // Placeholder branch or current branch from context if added
           subtotal: subtotal,
           tax: tax,
-          total: total,
+          total: finalTotal,
           payment_method: "QRIS", // Default for mobile
-          order_type: "DINE_IN",
+          order_type: "Take Away", // Default for mobile customer app
         })
         .select()
         .single();
@@ -102,12 +60,15 @@ export default function CartPage() {
       if (txError) throw txError;
 
       // 2. Insert into transaction_details
-      const details = cartItems.map((item) => ({
+      const details = cart.map((item) => ({
         transaction_id: transaction.id,
-        product_id: typeof item.id === "string" ? item.id : null,
+        product_id: item.id.startsWith("V-") ? null : item.id,
         product_name: item.name,
-        qty: item.quantity,
-        price: item.price,
+        qty: item.qty,
+        price: item.price + (item.modifierTotal || 0),
+        modifiers: item.selectedModifiers
+          ? JSON.stringify(item.selectedModifiers)
+          : null,
       }));
 
       const { error: dtError } = await supabase
@@ -115,17 +76,24 @@ export default function CartPage() {
         .insert(details);
       if (dtError) throw dtError;
 
-      // 3. Send Confirmation Email if email exists
+      // 3. Update stock for STOK_FISIK items (Simplified - usually done via RPC or Trigger)
+      // For now, we'll skip direct stock update here to keep it clean,
+      // but in a real app, a trigger or edge function would handle this based on transaction_details.
+
+      // 4. Send Confirmation Email if email exists
       if (user.email) {
         await sendOrderSuccessEmail(user.email, {
           id: transaction.id,
-          total: total,
-          items: cartItems,
+          total: finalTotal,
+          items: cart.map((i) => ({
+            ...i,
+            quantity: i.qty, // Mapping for email template compatibility
+          })),
         });
       }
 
       alert("Order placed successfully!");
-      setCartItems([]);
+      clearCart();
       router.push("/app");
     } catch (error: unknown) {
       console.error(error);
@@ -150,59 +118,94 @@ export default function CartPage() {
       <Block className="mt-4!">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Your Order</h2>
-          <Badge variant="secondary">{cartItems.length} items</Badge>
+          <Badge variant="secondary">{cart.length} items</Badge>
         </div>
       </Block>
 
       <List strongIos outlineIos>
-        {cartItems.map((item) => (
-          <ListItem
-            key={item.id}
-            title={item.name}
-            subtitle={
-              <div className="flex items-center gap-2 mt-1">
-                <button
-                  onClick={() => updateQuantity(item.id, -1)}
-                  className="h-6 w-6 rounded bg-black/5 flex items-center justify-center text-sm font-bold"
-                >
-                  -
-                </button>
-                <span className="w-6 text-center">{item.quantity}</span>
-                <button
-                  onClick={() => updateQuantity(item.id, 1)}
-                  className="h-6 w-6 rounded bg-black/5 flex items-center justify-center text-sm font-bold"
-                >
-                  +
-                </button>
-              </div>
-            }
-            after={
-              <div className="flex items-center gap-3">
-                <span className="font-bold text-slate-800">
-                  Rp {(item.price * item.quantity).toLocaleString()}
-                </span>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="h-8 w-8 rounded-full bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            }
-          />
-        ))}
+        {cart.map((item) => {
+          const modifiersId =
+            item.selectedModifiers
+              ?.map((m) => m.id)
+              .sort()
+              .join(",") || "";
+          const cartId = `${item.id}-${modifiersId}-${item.note}`;
+          const unitPrice = item.price + (item.modifierTotal || 0);
+
+          return (
+            <ListItem
+              key={cartId}
+              title={item.name}
+              subtitle={
+                <div className="mt-1">
+                  {item.selectedModifiers &&
+                    item.selectedModifiers.map((m) => (
+                      <div
+                        key={m.id}
+                        className="text-[10px] text-muted-foreground"
+                      >
+                        + {m.name}
+                      </div>
+                    ))}
+                  {item.note && (
+                    <div className="text-[10px] text-danger italic">
+                      Note: {item.note}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4 mt-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateQuantity(cartId, item.qty - 1)}
+                        className="h-7 w-7 rounded-lg bg-black/5 flex items-center justify-center text-sm font-bold active:bg-black/10"
+                      >
+                        <MinusIcon className="size-3" />
+                      </button>
+                      <span className="w-6 text-center font-bold text-sm">
+                        {item.qty}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(cartId, item.qty + 1)}
+                        className="h-7 w-7 rounded-lg bg-black/5 flex items-center justify-center text-sm font-bold active:bg-black/10"
+                      >
+                        <PlusIcon className="size-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+              after={
+                <div className="flex flex-col items-end gap-2">
+                  <span className="font-bold text-primary">
+                    Rp {(unitPrice * item.qty).toLocaleString()}
+                  </span>
+                  <button
+                    onClick={() => removeFromCart(cartId)}
+                    className="h-8 w-8 rounded-full bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-100 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              }
+            />
+          );
+        })}
       </List>
 
-      {cartItems.length === 0 && (
+      {cart.length === 0 && (
         <Block className="text-center py-12">
+          <div className="size-20 bg-secondary/50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trash2 className="size-10 text-muted/30" />
+          </div>
           <p className="text-gray-400 text-lg">Cart is empty</p>
           <Link href="/app">
-            <Button className="mt-4 bg-slate-800!">View Menu</Button>
+            <Button className="mt-4 bg-primary! text-white! rounded-xl!">
+              View Menu
+            </Button>
           </Link>
         </Block>
       )}
 
-      {cartItems.length > 0 && (
+      {cart.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 safe-area-bottom z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
           <div className="space-y-1 mb-4">
             <div className="flex items-center justify-between text-sm text-gray-500">
@@ -214,15 +217,15 @@ export default function CartPage() {
               <span>Rp {tax.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-gray-50 border-dashed">
-              <span className="font-medium">Total</span>
-              <span className="text-xl font-bold text-slate-800">
-                Rp {total.toLocaleString()}
+              <span className="font-medium text-slate-800">Total Amount</span>
+              <span className="text-2xl font-black text-primary">
+                Rp {finalTotal.toLocaleString()}
               </span>
             </div>
           </div>
           <Button
             size="lg"
-            className="w-full bg-slate-800! text-white! rounded-2xl! flex items-center justify-center gap-2"
+            className="w-full bg-primary! text-white! rounded-2xl! h-14! font-bold! shadow-lg shadow-primary/20"
             onClick={handleCheckout}
             disabled={isCheckingOut}
           >

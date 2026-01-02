@@ -29,6 +29,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isCashier: boolean;
   isCustomer: boolean;
+  isAdminPusat: boolean;
   canAccessDashboard: boolean;
 }
 
@@ -142,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = user?.role === "admin";
   const isCashier = user?.role === "cashier";
   const isCustomer = user?.role === "customer";
+  const isAdminPusat = isSuperAdmin || (isAdmin && !user?.branchId);
   const canAccessDashboard = isSuperAdmin || isAdmin || isCashier;
 
   return (
@@ -160,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAdmin,
         isCashier,
         isCustomer,
+        isAdminPusat,
         canAccessDashboard,
       }}
     >
